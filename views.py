@@ -1,7 +1,8 @@
 import flet as ft
+import sqlite3
 
 from xlsx_export import build_usage_history_workbook
-
+from xlsx_import import parse_usage_workbook
 
 class GymAppView(ft.Column):
     def __init__(self, db):
@@ -9,10 +10,19 @@ class GymAppView(ft.Column):
         self.db = db
         self.expand = True
         self.file_picker = ft.FilePicker()
+        self.import_status = ft.Text("")
 
         # UI components
         self.summary_list = ft.ListView(expand=True, spacing=10, padding=10)
-        self.machine_dropdown = ft.Dropdown(label="Selecciona máquina", width=450)
+        self.machine_dropdown = ft.Dropdown(
+            label="Selecciona máquina", 
+            width=450,
+            on_select=self._on_machine_selected,
+        )
+        self.latest_usage_text = ft.Text(
+            "Selecciona una máquina para consultar su último registro.",
+            italic=True,
+        )
         self.weight_input = ft.TextField(label="Peso (kg)", width=150, keyboard_type=ft.KeyboardType.NUMBER)
         
         self.new_machine_input = ft.TextField(label="Nombre nueva máquina", width=450)
@@ -37,13 +47,23 @@ class GymAppView(ft.Column):
                         theme_style=ft.TextThemeStyle.TITLE_LARGE,
                         weight=ft.FontWeight.BOLD,
                     ),
+                    self.summary_list,
                     ft.OutlinedButton(
                         "Exportar historial a Excel",
                         icon=ft.Icons.FILE_DOWNLOAD,
                         on_click=self._on_export_history_click,
                         style=button_style,
+                        width=280
                     ),
-                    self.summary_list,
+                    ft.OutlinedButton(
+                        "Importar desde Excel",
+                        icon=ft.Icons.FILE_UPLOAD,
+                        on_click=self._on_import_history_click,
+                        style=button_style,
+                        width=280
+                    ),
+                    ft.Text("La importación reemplazará todas las máquinas y registros actuales."),
+                    self.import_status,
                 ]
             ),
             padding=10,
@@ -58,6 +78,7 @@ class GymAppView(ft.Column):
                         weight=ft.FontWeight.BOLD,
                     ),
                     self.machine_dropdown,
+                    self.latest_usage_text,
                     self.weight_input,
                     ft.FilledButton(
                         "Guardar Uso",
@@ -127,8 +148,8 @@ class GymAppView(ft.Column):
 
         tab_bar = ft.TabBar(
             tabs=[
-                ft.Tab(label="Progreso"),
                 ft.Tab(label="Añadir Uso"),
+                ft.Tab(label="Historial"),
                 ft.Tab(label="Gestionar Máquinas"),
             ],
             label_text_style=tab_label_style,
@@ -137,8 +158,8 @@ class GymAppView(ft.Column):
 
         tab_view = ft.TabBarView(
             controls=[
-                summary_panel,
                 new_usage_panel,
+                summary_panel,
                 management_panel,
             ],
             expand=True,
@@ -170,34 +191,67 @@ class GymAppView(ft.Column):
         if not results:
             self.summary_list.controls.append(ft.Text("No hay máquinas registradas aún.", italic=True))
         else:
-            for row in results:
-                machine_id, machine_name, weight, date = row
-                weight_str = f"{weight} kg" if weight is not None else "Sin registros"
-                date_str = f"({date})" if date else ""
-                
+            for machine_id, machine_name, weight, date in results:
                 self.summary_list.controls.append(
                     ft.Card(
                         content=ft.Container(
-                            content=ft.Column([
-                                ft.Text(
-                                    machine_name,
-                                    theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                    weight=ft.FontWeight.BOLD, 
-                                ),
-                                ft.Row([
-                                    ft.Text(
-                                        f"Último peso: {weight_str}", 
-                                        theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                        color=ft.Colors.BLUE_700
+                            content=ft.Row(
+                                controls=[
+                                    ft.Container(
+                                        content=ft.Text(
+                                            machine_name,
+                                            theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                                            weight=ft.FontWeight.BOLD,
+                                            max_lines=1,
+                                            overflow=ft.TextOverflow.ELLIPSIS,
+                                        ),
+                                        width=200,
                                     ),
-                                    ft.Text(
-                                        date_str, 
-                                        theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                        color=ft.Colors.GREY_700
+                                    ft.Container(
+                                        content=ft.Text(
+                                            f"{weight} kg",
+                                            theme_style=ft.TextThemeStyle.BODY_MEDIUM,
+                                            color=ft.Colors.BLUE_700,
+                                            text_align=ft.TextAlign.CENTER,
+                                        ),
+                                        width=90,
                                     ),
-                                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-                            ]),
-                            padding=10
+                                    ft.Container(
+                                        content=ft.Text(
+                                            date,
+                                            theme_style=ft.TextThemeStyle.BODY_MEDIUM,
+                                            color=ft.Colors.GREY_700,
+                                            text_align=ft.TextAlign.RIGHT,
+                                        ),
+                                        width=100,
+                                    ),
+                                ],
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+
+
+
+
+
+                                # controls=[
+                                #     ft.Text(
+                                #         machine_name,
+                                #         theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                                #         weight=ft.FontWeight.BOLD,
+                                #     ),
+                                #     ft.Text(
+                                #         f"{weight} kg",
+                                #         theme_style=ft.TextThemeStyle.BODY_MEDIUM,
+                                #         color=ft.Colors.BLUE_700,
+                                #     ),
+                                #     ft.Text(
+                                #         date,
+                                #         theme_style=ft.TextThemeStyle.BODY_MEDIUM,
+                                #         color=ft.Colors.GREY_700,
+                                #     ),
+                                # ],
+                                # alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            ),
+                            padding=10,
                         )
                     )
                 )
@@ -210,10 +264,36 @@ class GymAppView(ft.Column):
         self.machine_del_dropdown.options = options
 
         self.machine_dropdown.value = None
+        self.latest_usage_text.value = (
+            "Selecciona una máquina para consultar su último registro."
+        )
         self.weight_input.value = ""
         self.new_machine_input.value = ""
         self.new_name_input.value = ""
         
+        if self.page is not None:
+            self.update()
+
+    def _on_machine_selected(self, e):
+        if not self.machine_dropdown.value:
+            self.latest_usage_text.value = (
+                "Selecciona una máquina para consultar su último registro."
+            )
+        else:
+            latest_usage = self.db.get_latest_usage(
+                int(self.machine_dropdown.value)
+            )
+
+            if latest_usage is None:
+                self.latest_usage_text.value = (
+                    "Esta máquina todavía no tiene registros."
+                )
+            else:
+                weight, usage_date = latest_usage
+                self.latest_usage_text.value = (
+                    f"Último peso registrado: {weight} kg ({usage_date})"
+                )
+
         if self.page is not None:
             self.update()
 
@@ -227,6 +307,37 @@ class GymAppView(ft.Column):
             allowed_extensions=["xlsx"],
             src_bytes=workbook,
         )
+
+    async def _on_import_history_click(self, e):
+        files = await self.file_picker.pick_files(
+            dialog_title="Importar historial desde Excel",
+            file_type=ft.FilePickerFileType.CUSTOM,
+            allowed_extensions=["xlsx"],
+            allow_multiple=False,
+            with_data=True,
+        )
+
+        if not files:
+            return
+
+        try:
+            workbook_bytes = files[0].bytes
+            if workbook_bytes is None:
+                raise ValueError("No se pudieron leer los datos del archivo.")
+
+            machines, usages = parse_usage_workbook(workbook_bytes)
+            self.db.replace_data(machines, usages)
+        except (ValueError, sqlite3.Error) as exc:
+            self.import_status.value = f"No se pudo importar: {exc}"
+        else:
+            self.import_status.value = (
+                f"Importación completada: {len(machines)} máquinas y "
+                f"{len(usages)} registros."
+            )
+            self.update_data()
+
+        if self.page is not None:
+            self.update()
 
     # --- EVENT HANDLERS ---
     def _on_log_usage_click(self, e):

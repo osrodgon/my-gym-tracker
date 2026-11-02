@@ -34,12 +34,9 @@ class GymDatabase:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT m.id, m.name, u.weight, u.date
-                FROM machines m
-                LEFT JOIN usages u ON m.id = u.machine_id
-                WHERE u.id IS NULL OR u.id = (
-                    SELECT MAX(id) FROM usages WHERE machine_id = m.id
-                )
-                ORDER BY m.name ASC
+                FROM usages u
+                JOIN machines m ON m.id = u.machine_id
+                ORDER BY u.date DESC, u.id DESC
             """)
             return cursor.fetchall()
 
@@ -59,6 +56,18 @@ class GymDatabase:
                 ORDER BY u.date ASC, u.id ASC
             """)
             return cursor.fetchall()
+
+    def get_latest_usage(self, machine_id):
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT weight, date
+                FROM usages
+                WHERE machine_id = ?
+                ORDER BY date DESC, id DESC
+                LIMIT 1
+            """, (machine_id,))
+            return cursor.fetchone()
 
     def log_use(self, machine_id, weight):
         today = datetime.date.today().strftime("%Y-%m-%d")
@@ -85,4 +94,37 @@ class GymDatabase:
             cursor.execute("DELETE FROM usages WHERE machine_id = ?", (machine_id,))
             cursor.execute("DELETE FROM machines WHERE id = ?", (machine_id,))
             conn.commit()
-            
+
+    def replace_data(
+        self,
+        machines: list[str],
+        usages: list[tuple[str, str, float]],
+    ):
+        with self._connect() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("DELETE FROM usages")
+            cursor.execute("DELETE FROM machines")
+
+            cursor.executemany(
+                "INSERT INTO machines (name) VALUES (?)",
+                [(name,) for name in machines],
+            )
+
+            machine_ids = {
+                name: machine_id
+                for machine_id, name in cursor.execute(
+                    "SELECT id, name FROM machines"
+                ).fetchall()
+            }
+
+            cursor.executemany(
+                """
+                INSERT INTO usages (date, machine_id, weight)
+                VALUES (?, ?, ?)
+                """,
+                [
+                    (usage_date, machine_ids[machine_name], weight)
+                    for usage_date, machine_name, weight in usages
+                ],
+            )
