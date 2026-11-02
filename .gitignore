@@ -1,0 +1,5 @@
+build/
+.flet/
+__pycache__/
+*.db
+.vscode/
