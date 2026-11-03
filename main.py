@@ -3,15 +3,26 @@ from database import GymDatabase
 from views import GymAppView
 
 def main(page: ft.Page):
+    # Set the theme mode to system default (light/dark)
+    page.theme_mode = ft.ThemeMode.SYSTEM
+
     # Font theme for better readability
+    text_theme=ft.TextTheme(
+        body_large=ft.TextStyle(size=20),
+        body_medium=ft.TextStyle(size=18),
+        label_large=ft.TextStyle(size=18),
+        title_large=ft.TextStyle(size=24),
+        title_medium=ft.TextStyle(size=18),
+    )
+
+    # Set the theme for the page
     page.theme = ft.Theme(
-        text_theme=ft.TextTheme(
-            body_large=ft.TextStyle(size=20),
-            body_medium=ft.TextStyle(size=18),
-            label_large=ft.TextStyle(size=18),
-            title_large=ft.TextStyle(size=24),
-            title_medium=ft.TextStyle(size=18),
-        )
+        color_scheme_seed=ft.Colors.BLUE,
+        text_theme=text_theme
+    )
+    page.dark_theme = ft.Theme(
+        color_scheme_seed=ft.Colors.BLUE,
+        text_theme=text_theme
     )
 
     # UI title in Spanish
