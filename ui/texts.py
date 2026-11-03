@@ -22,7 +22,8 @@ USAGE = {
 
 HISTORY = {
     "heading": "Último peso registrado por máquina",
-    "empty": "No hay máquinas registradas aún.",
+    "empty_no_machines": "Todavía no hay máquinas registradas.",
+    "empty_no_usages": "Aún no hay entrenamientos registrados. Añade un uso para ver aquí el histórico.",
     "export": "Exportar historial a Excel",
     "import": "Importar desde Excel",
     "latest": "Último: {weight} kg · {date}",
@@ -79,4 +80,5 @@ ERRORS = {
     "enter_machine_name": "Introduce el nombre de la máquina.",
     "enter_new_name": "Introduce el nuevo nombre de la máquina.",
     "select_machine_to_delete": "Selecciona la máquina que quieres eliminar.",
+    "select_machine_to_rename": "Selecciona la máquina que quieres modificar.",
 }

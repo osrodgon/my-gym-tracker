@@ -1,6 +1,6 @@
 name: "gymtracker"
 product: "Mi Gimnasio"
 description: "Una aplicación modular para hacer seguimiento de tus entrenamientos."
-org: "com.tutuor.gymtracker"
-app_id: "com.tuusuario.gymtracker"
+org: "com.osukaru"
+app_id: "com.osukaru.gymtracker"
 icon: "assets/icon.png"

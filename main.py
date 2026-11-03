@@ -37,7 +37,7 @@ def main(page: ft.Page):
     page.services.append(app_view.file_picker)
     page.add(app_view)
     page.appbar = app_view.app_bar
-    page.drawer = app_view.navigation_drawer
+    page.navigation_bar = app_view.navigation_bar
     app_view.update_data()  # Initial call to load data when starting the application
 
 if __name__ == "__main__":
