@@ -17,19 +17,32 @@ class GymAppView(ft.Column):
         self.summary_list = ft.ListView(expand=True, spacing=10, padding=10)
         self.machine_dropdown = ft.Dropdown(
             label=USAGE["machine_label"], 
-            width=450,
             on_select=self._on_machine_selected,
         )
         self.latest_usage_text = ft.Text(
             USAGE["select_machine"],
             italic=True,
         )
-        self.weight_input = ft.TextField(label=USAGE["weight_label"], width=150, keyboard_type=ft.KeyboardType.NUMBER)
-        
-        self.new_machine_input = ft.TextField(label=MACHINES["new_name_label"], width=450)
-        self.machine_mod_dropdown = ft.Dropdown(label=MACHINES["select_to_rename"], width=450)
-        self.new_name_input = ft.TextField(label=MACHINES["new_name"], width=450)
-        self.machine_del_dropdown = ft.Dropdown(label=MACHINES["select_to_delete"], width=450)
+        self.weight_input = ft.TextField(
+            label=USAGE["weight_label"], 
+            width=150, 
+            keyboard_type=ft.KeyboardType.NUMBER
+        )
+        self.new_machine_input = ft.TextField(
+            label=MACHINES["new_name_label"]
+        )
+        self.machine_mod_dropdown = ft.Dropdown(
+            label=MACHINES["select_to_rename"]
+        )
+        self.new_name_input = ft.TextField(
+            label=MACHINES["new_name"]
+        )
+        self.machine_del_dropdown = ft.Dropdown(
+            label=MACHINES["select_to_delete"]
+        )
+
+        self.machine_dropdown.col = {"xs": 12, "md": 8}
+        self.latest_usage_text.col = {"xs": 12}
 
         self._build_ui()
 
@@ -92,22 +105,33 @@ class GymAppView(ft.Column):
         return ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Text(
-                        USAGE["heading"],
-                        theme_style=ft.TextThemeStyle.TITLE_LARGE,
-                        weight=ft.FontWeight.BOLD,
-                    ),
-                    self.machine_dropdown,
-                    self.latest_usage_text,
-                    self.weight_input,
-                    ft.FilledButton(
-                        USAGE["save"],
-                        icon=ft.Icons.SAVE,
-                        on_click=self._on_log_usage_click,
-                        style=self.button_style,
-                    ),
+                    ft.ResponsiveRow(
+                        run_spacing=15,
+                        controls=[
+                            ft.Text(
+                                USAGE["heading"],
+                                theme_style=ft.TextThemeStyle.TITLE_LARGE,
+                                weight=ft.FontWeight.BOLD,
+                                col={"xs": 12},
+                            ),
+                            self.machine_dropdown,
+                            self.latest_usage_text,
+                            ft.Container(
+                                content=self.weight_input,
+                                width=150,
+                                col={"xs": 12},
+                            ),
+                            ft.FilledButton(
+                                USAGE["save"],
+                                icon=ft.Icons.SAVE,
+                                on_click=self._on_log_usage_click,
+                                style=self.button_style,
+                                col={"xs": 12, "sm": 6},
+                            ),
+                        ],
+                    )
                 ],
-                spacing=15,
+                scroll=ft.ScrollMode.AUTO,
             ),
             padding=20,
         )
