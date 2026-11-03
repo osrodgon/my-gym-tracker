@@ -10,7 +10,6 @@ class GymAppView(ft.Column):
         self.db = db
         self.expand = True
         self.file_picker = ft.FilePicker()
-        self.import_status = ft.Text("")
 
         # UI components
         self.summary_list = ft.ListView(expand=True, spacing=10, padding=10)
@@ -33,7 +32,7 @@ class GymAppView(ft.Column):
         self._build_ui()
 
     def _build_ui(self):
-        button_style = ft.ButtonStyle(
+        self.button_style = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=12),
             padding=20,
             text_style=ft.TextStyle(size=18, weight=ft.FontWeight.W_500),
@@ -52,18 +51,16 @@ class GymAppView(ft.Column):
                         "Exportar historial a Excel",
                         icon=ft.Icons.FILE_DOWNLOAD,
                         on_click=self._on_export_history_click,
-                        style=button_style,
+                        style=self.button_style,
                         width=280
                     ),
                     ft.OutlinedButton(
                         "Importar desde Excel",
                         icon=ft.Icons.FILE_UPLOAD,
                         on_click=self._on_import_history_click,
-                        style=button_style,
+                        style=self.button_style,
                         width=280
                     ),
-                    ft.Text("La importación reemplazará todas las máquinas y registros actuales."),
-                    self.import_status,
                 ]
             ),
             padding=10,
@@ -84,7 +81,7 @@ class GymAppView(ft.Column):
                         "Guardar Uso",
                         icon=ft.Icons.SAVE,
                         on_click=self._on_log_usage_click,
-                        style=button_style,
+                        style=self.button_style,
                     ),
                 ],
                 spacing=15,
@@ -105,7 +102,7 @@ class GymAppView(ft.Column):
                         "Crear Máquina",
                         icon=ft.Icons.ADD,
                         on_click=self._on_add_machine_click,
-                        style=button_style,
+                        style=self.button_style,
                     ),
                     ft.Divider(),
                     ft.Text(
@@ -119,7 +116,7 @@ class GymAppView(ft.Column):
                         "Actualizar Nombre",
                         icon=ft.Icons.EDIT,
                         on_click=self._on_rename_machine_click,
-                        style=button_style,
+                        style=self.button_style,
                     ),
                     ft.Divider(),
                     ft.Text(
@@ -132,7 +129,7 @@ class GymAppView(ft.Column):
                         "Eliminar",
                         icon=ft.Icons.DELETE,
                         on_click=self._on_delete_machine_click,
-                        style=button_style,
+                        style=self.button_style,
                     ),
                 ],
                 spacing=10,
@@ -227,29 +224,6 @@ class GymAppView(ft.Column):
                                     ),
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-
-
-
-
-
-                                # controls=[
-                                #     ft.Text(
-                                #         machine_name,
-                                #         theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                #         weight=ft.FontWeight.BOLD,
-                                #     ),
-                                #     ft.Text(
-                                #         f"{weight} kg",
-                                #         theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                #         color=ft.Colors.BLUE_700,
-                                #     ),
-                                #     ft.Text(
-                                #         date,
-                                #         theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                #         color=ft.Colors.GREY_700,
-                                #     ),
-                                # ],
-                                # alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
                             padding=10,
                         )
@@ -308,7 +282,33 @@ class GymAppView(ft.Column):
             src_bytes=workbook,
         )
 
-    async def _on_import_history_click(self, e):
+    def _on_import_history_click(self, e):
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Confirmar importación"),
+                content=ft.Text(
+                    "La importación reemplazará todas las máquinas "
+                    "y registros actuales."
+                ),
+                actions=[
+                    ft.OutlinedButton(
+                        "Cancelar",
+                        on_click=lambda e: self.page.pop_dialog(),
+                        style=self.button_style,
+                    ),
+                    ft.FilledButton(
+                        "Continuar",
+                        on_click=self._on_confirm_import_history_click,
+                        style=self.button_style,
+                    ),
+                ],
+            )
+        )
+
+    async def _on_confirm_import_history_click(self, e):
+        self.page.pop_dialog()
+
         files = await self.file_picker.pick_files(
             dialog_title="Importar historial desde Excel",
             file_type=ft.FilePickerFileType.CUSTOM,
@@ -317,6 +317,7 @@ class GymAppView(ft.Column):
             with_data=True,
         )
 
+        # Cancelar el selector de archivos no inicia la importación.
         if not files:
             return
 
@@ -328,16 +329,31 @@ class GymAppView(ft.Column):
             machines, usages = parse_usage_workbook(workbook_bytes)
             self.db.replace_data(machines, usages)
         except (ValueError, sqlite3.Error) as exc:
-            self.import_status.value = f"No se pudo importar: {exc}"
+            result = f"No se pudo importar: {exc}"
         else:
-            self.import_status.value = (
+            self.update_data()
+            result = (
                 f"Importación completada: {len(machines)} máquinas y "
                 f"{len(usages)} registros."
             )
-            self.update_data()
 
-        if self.page is not None:
-            self.update()
+        self._show_import_result(result)
+
+    def _show_import_result(self, message):
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Resultado de la importación"),
+                content=ft.Text(message),
+                actions=[
+                    ft.FilledButton(
+                        "Aceptar",
+                        on_click=lambda e: self.page.pop_dialog(),
+                        style=self.button_style,
+                    ),
+                ],
+            )
+        )
 
     # --- EVENT HANDLERS ---
     def _on_log_usage_click(self, e):
@@ -371,8 +387,36 @@ class GymAppView(ft.Column):
                 pass
 
     def _on_delete_machine_click(self, e):
-        if self.machine_del_dropdown.value:
-            machine_id = int(self.machine_del_dropdown.value)
+        if not self.machine_del_dropdown.value:
+            return
+
+        machine_id = int(self.machine_del_dropdown.value)
+
+        def confirm_delete(e):
+            self.page.pop_dialog()
             self.db.delete_machine(machine_id)
             self.update_data()
+
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Confirmar eliminación"),
+                content=ft.Text(
+                    "¿Seguro que quieres eliminar esta máquina? "
+                    "También se borrarán sus registros de uso."
+                ),
+                actions=[
+                    ft.OutlinedButton(
+                        "Cancelar",
+                        on_click=lambda e: self.page.pop_dialog(),
+                        style=self.button_style,
+                    ),
+                    ft.FilledButton(
+                        "Eliminar",
+                        on_click=confirm_delete,
+                        style=self.button_style,
+                    ),
+                ],
+            )
+        )
             
