@@ -1,5 +1,6 @@
 import flet as ft
 import sqlite3
+from datetime import date
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
@@ -30,6 +31,15 @@ class GymAppView(ft.Column):
         self.machine_del_dropdown = ft.Dropdown(label="Máquina a eliminar", width=450)
 
         self._build_ui()
+
+    @staticmethod
+    def _format_date(iso_date: str) -> str:
+            parsed_date = date.fromisoformat(iso_date)
+            month_names = (
+                "ene", "feb", "mar", "abr", "may", "jun",
+                "jul", "ago", "sep", "oct", "nov", "dic",
+            )
+            return f"{parsed_date.day} {month_names[parsed_date.month - 1]}. {parsed_date.year}"
 
     def _build_ui(self):
         self.button_style = ft.ButtonStyle(
@@ -190,51 +200,56 @@ class GymAppView(ft.Column):
     def update_data(self):
         results = self.db.get_summary()
         self.summary_list.controls.clear()
-        
+
         if not results:
-            self.summary_list.controls.append(ft.Text("No hay máquinas registradas aún.", italic=True))
+            self.summary_list.controls.append(
+                ft.Text("No hay máquinas registradas aún.", italic=True)
+            )
         else:
-            for machine_id, machine_name, weight, date in results:
+            grouped_results = {}
+
+            for machine_id, machine_name, weight, usage_date in results:
+                if machine_id not in grouped_results:
+                    grouped_results[machine_id] = {
+                        "name": machine_name,
+                        "entries": [],
+                    }
+
+                grouped_results[machine_id]["entries"].append(
+                    (weight, usage_date)
+                )
+
+            for machine in grouped_results.values():
+                entries = machine["entries"]
+                latest_weight, latest_date = entries[0]
+
                 self.summary_list.controls.append(
                     ft.Card(
-                        content=ft.Container(
-                            content=ft.Row(
-                                controls=[
-                                    ft.Container(
-                                        content=ft.Text(
-                                            machine_name,
-                                            theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                            weight=ft.FontWeight.BOLD,
-                                            max_lines=1,
-                                            overflow=ft.TextOverflow.ELLIPSIS,
-                                        ),
-                                        width=200,
-                                    ),
-                                    ft.Container(
-                                        content=ft.Text(
-                                            f"{weight} kg",
-                                            theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                            color=ft.Colors.BLUE_700,
-                                            text_align=ft.TextAlign.CENTER,
-                                        ),
-                                        width=90,
-                                    ),
-                                    ft.Container(
-                                        content=ft.Text(
-                                            date,
-                                            theme_style=ft.TextThemeStyle.BODY_MEDIUM,
-                                            color=ft.Colors.GREY_700,
-                                            text_align=ft.TextAlign.RIGHT,
-                                        ),
-                                        width=100,
-                                    ),
-                                ],
-                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        content=ft.ExpansionTile(
+                            title=ft.Text(
+                                machine["name"],
+                                weight=ft.FontWeight.BOLD,
                             ),
-                            padding=10,
-                        )
+                            subtitle=ft.Text(
+                                f"Último: {latest_weight} kg · "
+                                f"{self._format_date(latest_date)}"
+                            ),
+                            controls=[
+                                ft.ListTile(
+                                    title=ft.Text(self._format_date(entry_date)),
+                                    trailing=ft.Text(
+                                        f"{entry_weight} kg",
+                                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                                        color=ft.Colors.BLUE_700,
+                                    ),
+                                )
+                                for entry_weight, entry_date in entries
+                            ],
+                        ),
                     )
                 )
+
+
 
         machines = self.db.get_machines()
         options = [ft.DropdownOption(text=m[1], key=str(m[0])) for m in machines]
@@ -271,7 +286,8 @@ class GymAppView(ft.Column):
             else:
                 weight, usage_date = latest_usage
                 self.latest_usage_text.value = (
-                    f"Último peso registrado: {weight} kg ({usage_date})"
+                    f"Último peso registrado: {weight} kg "
+                    f"({self._format_date(usage_date)})"
                 )
 
         if self.page is not None:
