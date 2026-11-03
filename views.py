@@ -138,44 +138,50 @@ class GymAppView(ft.Column):
             padding=20,
         )
 
-        tab_label_style = ft.TextStyle(
-            size=18,
-            weight=ft.FontWeight.W_500,
-        )
+        self.sections = [
+            ("Añadir Uso", new_usage_panel, ft.Icons.FITNESS_CENTER),
+            ("Historial", summary_panel, ft.Icons.HISTORY),
+            ("Gestionar Máquinas", management_panel, ft.Icons.SETTINGS),
+        ]
+        self.selected_section = 0
 
-        tab_bar = ft.TabBar(
-            tabs=[
-                ft.Tab(label="Añadir Uso"),
-                ft.Tab(label="Historial"),
-                ft.Tab(label="Gestionar Máquinas"),
-            ],
-            label_text_style=tab_label_style,
-            unselected_label_text_style=tab_label_style,
-        )
-
-        tab_view = ft.TabBarView(
-            controls=[
-                new_usage_panel,
-                summary_panel,
-                management_panel,
-            ],
+        self.content_container = ft.Container(
+            content=self.sections[self.selected_section][1],
             expand=True,
         )
 
-        tabs = ft.Tabs(
-            content=ft.Column(
-                controls=[tab_bar, tab_view],
-                expand=True,
+        self.app_bar = ft.AppBar(
+            title=ft.Text(self.sections[self.selected_section][0]),
+            leading=ft.IconButton(
+                icon=ft.Icons.MENU,
+                on_click=self._open_navigation_drawer,
             ),
-            length=3,
-            selected_index=0,
-            animation_duration=300,
-            expand=1,
+        )
+
+        self.navigation_drawer = ft.NavigationDrawer(
+            selected_index=self.selected_section,
+            on_change=self._on_navigation_change,
+            controls=[
+                ft.Container(
+                    padding=ft.Padding.only(left=28, top=16, right=16, bottom=10),
+                    content=ft.Text(
+                        "Mi Gimnasio",
+                        theme_style=ft.TextThemeStyle.TITLE_SMALL,
+                    ),
+                ),
+                *[
+                    ft.NavigationDrawerDestination(
+                        label=label,
+                        icon=icon,
+                    )
+                    for label, _, icon in self.sections
+                ],
+            ],
         )
 
         self.controls = [
             ft.Container(
-                content=tabs,
+                content=self.content_container,
                 padding=ft.Padding.only(top=24),
                 expand=True,
             )
@@ -354,6 +360,21 @@ class GymAppView(ft.Column):
                 ],
             )
         )
+
+    async def _open_navigation_drawer(self, e):
+        await self.page.show_drawer()
+
+    async def _on_navigation_change(self, e):
+        index = e.control.selected_index
+        if index is None:
+            return
+
+        self.selected_section = index
+        self.content_container.content = self.sections[index][1]
+        self.app_bar.title = ft.Text(self.sections[index][0])
+
+        await self.page.close_drawer()
+        self.update()
 
     # --- EVENT HANDLERS ---
     def _on_log_usage_click(self, e):
