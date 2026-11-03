@@ -1,6 +1,6 @@
 import flet as ft
 from database import GymDatabase
-from views import GymAppView
+from ui.views import GymAppView
 
 def main(page: ft.Page):
     # Set the theme mode to system default (light/dark)
