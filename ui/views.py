@@ -16,8 +16,8 @@ class GymAppView(ft.Column):
         # UI components
         self.summary_list = ft.ListView(expand=True, spacing=10, padding=10)
         self.machine_dropdown = ft.Dropdown(
-            label=USAGE["machine_label"], 
-            on_select=self._on_machine_selected,
+            label=USAGE["machine_label"],
+            border=ft.OutlineInputBorder(border_radius=12),
         )
         self.latest_usage_text = ft.Text(
             USAGE["select_machine"],
@@ -26,19 +26,27 @@ class GymAppView(ft.Column):
         self.weight_input = ft.TextField(
             label=USAGE["weight_label"], 
             width=150, 
-            keyboard_type=ft.KeyboardType.NUMBER
+            keyboard_type=ft.KeyboardType.NUMBER,
+            border=ft.OutlineInputBorder(border_radius=12),
+            on_change=self._clear_field_error,
         )
         self.new_machine_input = ft.TextField(
-            label=MACHINES["new_name_label"]
+            label=MACHINES["new_name_label"],
+            border=ft.OutlineInputBorder(border_radius=12),
+            on_change=self._clear_field_error,
         )
         self.machine_mod_dropdown = ft.Dropdown(
-            label=MACHINES["select_to_rename"]
+            label=MACHINES["select_to_rename"],
+            border=ft.OutlineInputBorder(border_radius=12),
         )
         self.new_name_input = ft.TextField(
-            label=MACHINES["new_name"]
+            label=MACHINES["new_name"],
+            border=ft.OutlineInputBorder(border_radius=12),
+            on_change=self._clear_field_error,
         )
         self.machine_del_dropdown = ft.Dropdown(
-            label=MACHINES["select_to_delete"]
+            label=MACHINES["select_to_delete"],
+            border=ft.OutlineInputBorder(border_radius=12),
         )
 
         self.machine_dropdown.col = {"xs": 12, "md": 8}
@@ -60,6 +68,16 @@ class GymAppView(ft.Column):
             shape=ft.RoundedRectangleBorder(radius=12),
             padding=20,
             text_style=ft.TextStyle(size=18, weight=ft.FontWeight.W_500),
+        )
+
+        self.destructive_button_style = self.button_style.copy(
+            color=ft.Colors.ERROR,
+            side=ft.BorderSide(color=ft.Colors.ERROR),
+        )
+
+        self.destructive_filled_button_style = self.button_style.copy(
+            bgcolor=ft.Colors.ERROR,
+            color=ft.Colors.ON_ERROR,
         )
 
         usage_panel = self._build_usage_panel()
@@ -173,11 +191,11 @@ class GymAppView(ft.Column):
                         weight=ft.FontWeight.BOLD,
                     ),
                     self.machine_del_dropdown,
-                    ft.FilledButton(
+                    ft.OutlinedButton(
                         MACHINES["delete"],
                         icon=ft.Icons.DELETE,
                         on_click=self._on_delete_machine_click,
-                        style=self.button_style,
+                        style=self.destructive_button_style,
                     ),
                 ],
                 spacing=10,
@@ -206,35 +224,17 @@ class GymAppView(ft.Column):
 
         self.app_bar = ft.AppBar(
             title=ft.Text(self.sections[self.selected_section][0]),
-            leading=ft.IconButton(
-                icon=ft.Icons.MENU,
-                on_click=self._open_navigation_drawer,
-            ),
         )
 
-        self.navigation_drawer = ft.NavigationDrawer(
+        self.navigation_bar = ft.NavigationBar(
             selected_index=self.selected_section,
             on_change=self._on_navigation_change,
-            controls=[
-                ft.Container(
-                    padding=ft.Padding.only(
-                        left=28,
-                        top=16,
-                        right=16,
-                        bottom=10,
-                    ),
-                    content=ft.Text(
-                        NAVIGATION["app_name"],
-                        theme_style=ft.TextThemeStyle.TITLE_SMALL,
-                    ),
-                ),
-                *[
-                    ft.NavigationDrawerDestination(
-                        label=label,
-                        icon=icon,
-                    )
-                    for label, _, icon in self.sections
-                ],
+            destinations=[
+                ft.NavigationBarDestination(
+                    label=label,
+                    icon=icon,
+                )
+                for label, _, icon in self.sections
             ],
         )
 
@@ -248,21 +248,43 @@ class GymAppView(ft.Column):
 
     def update_data(self):
         results = self.db.get_summary()
-        self._render_summary(results)
-
         machines = self.db.get_machines()
+
+        self._render_summary(results, machines)
         self._update_machine_options(machines)
         self._reset_inputs()
 
         if self.page is not None:
             self.update()
 
-    def _render_summary(self, results):
+    def _render_summary(self, results, machines):
         self.summary_list.controls.clear()
 
         if not results:
+            message = (
+                HISTORY["empty_no_machines"]
+                if not machines
+                else HISTORY["empty_no_usages"]
+            )
             self.summary_list.controls.append(
-                ft.Text(HISTORY["empty"], italic=True)
+                ft.Container(
+                    alignment=ft.Alignment.CENTER,
+                    padding=24,
+                    content=ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        controls=[
+                            ft.Icon(
+                                ft.Icons.HISTORY,
+                                color=ft.Colors.PRIMARY,
+                            ),
+                            ft.Text(
+                                message,
+                                italic=True,
+                                text_align=ft.TextAlign.CENTER,
+                            ),
+                        ],
+                    ),
+                )
             )
             return
 
@@ -305,7 +327,7 @@ class GymAppView(ft.Column):
                                         weight=entry_weight
                                     ),
                                     theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                    color=ft.Colors.BLUE_700,
+                                    color=ft.Colors.PRIMARY,
                                 ),
                             )
                             for entry_weight, entry_date in entries
@@ -331,9 +353,11 @@ class GymAppView(ft.Column):
         self.new_machine_input.value = ""
         self.new_name_input.value = ""
 
-
+    def _clear_field_error(self, e):
+        if e.control.error is not None:
+            e.control.error = None
+            e.control.update()
     
-
     def _on_machine_selected(self, e):
         if not self.machine_dropdown.value:
             self.latest_usage_text.value = (
@@ -437,36 +461,38 @@ class GymAppView(ft.Column):
             )
         )
 
-    async def _open_navigation_drawer(self, e):
-        await self.page.show_drawer()
-
-    async def _on_navigation_change(self, e):
+    def _on_navigation_change(self, e):
         index = e.control.selected_index
-        if index is None:
+        if index is None or not 0 <= index < len(self.sections):
             return
 
         self.selected_section = index
         self.content_container.content = self.sections[index][1]
         self.app_bar.title = ft.Text(self.sections[index][0])
 
-        await self.page.close_drawer()
         self.update()
+        self.app_bar.update()
 
-    def _show_error(self, message):
+    def _show_message_dialog(self, title, message):
         self.page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text(ERRORS["title"]),
+                title=ft.Text(title),
                 content=ft.Text(message),
                 actions=[
-                    ft.FilledButton(
+                    ft.TextButton(
                         COMMON["accept"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
                     ),
                 ],
             )
         )
+
+    def _show_error(self, message):
+        self._show_message_dialog(ERRORS["title"], message)
+
+    def _show_import_result(self, message):
+        self._show_message_dialog(IMPORT["result_title"], message)
 
     # --- EVENT HANDLERS ---
     def _on_log_usage_click(self, e):
@@ -498,13 +524,15 @@ class GymAppView(ft.Column):
     def _on_add_machine_click(self, e):
         name = self.new_machine_input.value.strip()
         if not name:
-            self._show_error(ERRORS["enter_machine_name"])
+            self.new_machine_input.error = ERRORS["enter_machine_name"]
+            self.update()
             return
 
         try:
             self.db.add_machine(name)
         except sqlite3.IntegrityError:
-            self._show_error(ERRORS["duplicate_machine"])
+            self.new_machine_input.error = ERRORS["duplicate_machine"]
+            self.update()
             return
         except sqlite3.Error as exc:
             self._show_error(ERRORS["add_machine"].format(error=exc))
@@ -512,11 +540,10 @@ class GymAppView(ft.Column):
 
         self.update_data()
 
-
     def _on_rename_machine_click(self, e):
         if not self.machine_mod_dropdown.value:
-            self._show_error(MACHINES["select_to_rename"])
-            return
+           self._show_error(ERRORS["select_machine_to_rename"])
+           return
 
         new_name = self.new_name_input.value.strip()
         if not new_name:
@@ -529,6 +556,7 @@ class GymAppView(ft.Column):
             self.db.rename_machine(machine_id, new_name)
         except sqlite3.IntegrityError:
             self._show_error(ERRORS["duplicate_machine"])
+            self.update()
             return
         except sqlite3.Error as exc:
             self._show_error(ERRORS["rename_machine"].format(error=exc))
@@ -565,12 +593,12 @@ class GymAppView(ft.Column):
                     ft.OutlinedButton(
                         COMMON["cancel"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
+                        style=self.button_style
                     ),
-                    ft.FilledButton(
+                    ft.OutlinedButton(
                         MACHINES["delete"],
                         on_click=confirm_delete,
-                        style=self.button_style,
+                        style=self.destructive_button_style,
                     ),
                 ],
             )
