@@ -35,8 +35,14 @@ def main(page: ft.Page):
     # By inheriting from ft.Column, it is added directly
     app_view = GymAppView(db)
     page.services.append(app_view.file_picker)
-    page.add(app_view)
-    page.appbar = app_view.app_bar
+    page.add(
+        ft.SafeArea(
+            content=app_view,
+            avoid_intrusions_top=True,
+            avoid_intrusions_bottom=False,
+            expand=True,
+        )
+    )
     page.navigation_bar = app_view.navigation_bar
     app_view.update_data()  # Initial call to load data when starting the application
 
