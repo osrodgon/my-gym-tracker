@@ -7,30 +7,39 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.SYSTEM
 
     # Font theme for better readability
-    text_theme=ft.TextTheme(
-        body_large=ft.TextStyle(size=20),
-        body_medium=ft.TextStyle(size=18),
-        label_large=ft.TextStyle(size=18),
-        title_large=ft.TextStyle(size=24),
-        title_medium=ft.TextStyle(size=18),
+    light_text_theme = ft.TextTheme(
+        body_large=ft.TextStyle(size=20, color=ft.Colors.BLACK),
+        body_medium=ft.TextStyle(size=18, color=ft.Colors.BLACK),
+        label_large=ft.TextStyle(size=18, color=ft.Colors.BLACK),
+        title_large=ft.TextStyle(size=24, color=ft.Colors.BLACK),
+        title_medium=ft.TextStyle(size=18, color=ft.Colors.BLACK),
     )
 
-    # Dialog theme for consistent dialog appearance
-    dialog_theme = ft.DialogTheme(
-        title_text_style=ft.TextStyle(size=20),
-        content_text_style=ft.TextStyle(size=16),
+    dark_text_theme = ft.TextTheme(
+        body_large=ft.TextStyle(size=20, color=ft.Colors.WHITE),
+        body_medium=ft.TextStyle(size=18, color=ft.Colors.WHITE),
+        label_large=ft.TextStyle(size=18, color=ft.Colors.WHITE),
+        title_large=ft.TextStyle(size=24, color=ft.Colors.WHITE),
+        title_medium=ft.TextStyle(size=18, color=ft.Colors.WHITE),
     )
 
     # Set the theme for the page
     page.theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
-        text_theme=text_theme,
-        dialog_theme=dialog_theme,
+        text_theme=light_text_theme,
+        dialog_theme=ft.DialogTheme(
+            title_text_style=ft.TextStyle(size=20, color=ft.Colors.BLACK),
+            content_text_style=ft.TextStyle(size=16, color=ft.Colors.BLACK),
+        ),
     )
+
     page.dark_theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
-        text_theme=text_theme,
-        dialog_theme=dialog_theme,
+        text_theme=dark_text_theme,
+        dialog_theme=ft.DialogTheme(
+            title_text_style=ft.TextStyle(size=20, color=ft.Colors.WHITE),
+            content_text_style=ft.TextStyle(size=16, color=ft.Colors.WHITE),
+        ),
     )
 
     # UI title in Spanish
