@@ -131,18 +131,38 @@ class GymAppView(ft.Column):
 
     def _build_usage_panel(self):
         return ft.Container(
+            expand=True,
+            padding=0,
             content=ft.Column(
+                expand=True,
+                spacing=0,
                 controls=[
-                    ft.ResponsiveRow(
-                        run_spacing=15,
+                    ft.Column(
+                        expand=True,
+                        scroll=ft.ScrollMode.AUTO,
                         controls=[
-                            self.machine_dropdown,
-                            self.latest_usage_text,
-                            ft.Container(
-                                content=self.weight_input,
-                                width=150,
-                                col={"xs": 12},
+                            ft.ResponsiveRow(
+                                run_spacing=15,
+                                controls=[
+                                    self.machine_dropdown,
+                                    self.latest_usage_text,
+                                    ft.Container(
+                                        content=self.weight_input,
+                                        width=150,
+                                        col={"xs": 12},
+                                    ),
+                                    ft.Container(
+                                        content=self.machine_image,
+                                        height=400,
+                                        alignment=ft.Alignment.CENTER,
+                                        col={"xs": 12},
+                                    ),
+                                ],
                             ),
+                        ],
+                    ),
+                    ft.ResponsiveRow(
+                        controls=[
                             ft.FilledButton(
                                 USAGE["save"],
                                 icon=ft.Icons.CHECK,
@@ -150,18 +170,10 @@ class GymAppView(ft.Column):
                                 style=self.button_style,
                                 col={"xs": 12, "sm": 6},
                             ),
-                            ft.Container(
-                                content=self.machine_image,
-                                height=400,
-                                alignment=ft.Alignment.CENTER,
-                                col={"xs": 12},
-                            ),
                         ],
-                    )
+                    ),
                 ],
-                scroll=ft.ScrollMode.AUTO,
             ),
-            padding=0,
         )
 
     def _show_history_actions(self, e):
