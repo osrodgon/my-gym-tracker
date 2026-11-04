@@ -46,6 +46,10 @@ MACHINES = {
         "¿Seguro que quieres eliminar esta máquina? "
         "También se borrarán sus registros de uso."
     ),
+    "add_button": "Añadir máquina",
+    "empty_list": "Aún no hay máquinas. Añade una para comenzar.",
+    "edit_tooltip": "Editar máquina",
+    "delete_tooltip": "Eliminar máquina",
 }
 
 IMPORT = {
@@ -82,3 +86,11 @@ ERRORS = {
     "select_machine_to_delete": "Selecciona la máquina que quieres eliminar.",
     "select_machine_to_rename": "Selecciona la máquina que quieres modificar.",
 }
+
+DATE = {
+    "months_short": (
+        "ene", "feb", "mar", "abr", "may", "jun",
+        "jul", "ago", "sep", "oct", "nov", "dic",
+    ),
+}
+
