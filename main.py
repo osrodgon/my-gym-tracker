@@ -34,6 +34,9 @@ def main(page: ft.Page):
     
     # By inheriting from ft.Column, it is added directly
     app_view = GymAppView(db)
+    page.on_platform_brightness_change = (
+        app_view._on_platform_brightness_change
+    )
     page.services.append(app_view.file_picker)
     page.add(
         ft.SafeArea(

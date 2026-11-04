@@ -260,12 +260,44 @@ class GymAppView(ft.Column):
             normalized.encode("ascii", "ignore").decode().lower(),
         ).strip("-")
 
-        filename = f"{slug}.jpg"
-        file_path = Path(__file__).resolve().parent.parent / "assets" / "machines" / filename
+        filename = f"{slug}.svg"
+        file_path = (
+            Path(__file__).resolve().parent.parent
+            / "assets"
+            / "machines"
+            / filename
+        )
 
         self.machine_image.visible = file_path.is_file()
         if self.machine_image.visible:
             self.machine_image.src = f"machines/{filename}"
+            is_dark = (
+                self.page.theme_mode == ft.ThemeMode.DARK
+                or (
+                    self.page.theme_mode == ft.ThemeMode.SYSTEM
+                    and self.page.platform_brightness == ft.Brightness.DARK
+                )
+            )
+            self.machine_image.color = (
+                ft.Colors.WHITE if is_dark else ft.Colors.BLACK
+            )
+
+    def _on_platform_brightness_change(self, e):
+        selected_key = self.machine_dropdown.value
+        if not selected_key:
+            return
+
+        option = next(
+            (
+                option
+                for option in self.machine_dropdown.options
+                if option.key == selected_key
+            ),
+            None,
+        )
+        if option is not None:
+            self._update_machine_image(option.text)
+            self.update()
 
     def update_data(self):
         results = self.db.get_summary()
