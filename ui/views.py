@@ -5,6 +5,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+import inspect
+
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES, NAVIGATION, USAGE, ERRORS, DATE
@@ -79,6 +81,21 @@ class GymAppView(ft.Column):
             color=ft.Colors.ON_ERROR,
         )
 
+        self.dialog_button_style = self.button_style.copy(
+            padding=12,
+            text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+        )
+
+        self.dialog_destructive_button_style = self.dialog_button_style.copy(
+            color=ft.Colors.ERROR,
+            side=ft.BorderSide(color=ft.Colors.ERROR),
+        )
+
+        self.dialog_destructive_filled_button_style = self.dialog_button_style.copy(
+            bgcolor=ft.Colors.ERROR,
+            color=ft.Colors.ON_ERROR,
+        )
+
         usage_panel = self._build_usage_panel()
         summary_panel = self._build_summary_panel()
         management_panel = self._build_management_panel()
@@ -149,9 +166,11 @@ class GymAppView(ft.Column):
 
     def _show_history_actions(self, e):
         def close_sheet_then(handler):
-            def on_click(event):
+            async def on_click(event):
                 self.page.pop_dialog()
-                handler(event)
+                result = handler(event)
+                if inspect.isawaitable(result):
+                    await result
 
             return on_click
 
@@ -409,6 +428,8 @@ class GymAppView(ft.Column):
                 margin=0,
                 shape=ft.RoundedRectangleBorder(radius=20),
                 content=ft.ListTile(
+                    horizontal_spacing=8,
+                    content_padding=ft.Padding.only(left=16, right=4),
                     leading=ft.Icon(
                         ft.Icons.FITNESS_CENTER,
                         color=ft.Colors.PRIMARY,
@@ -416,6 +437,7 @@ class GymAppView(ft.Column):
                     title=ft.Text(machine_name),
                     trailing=ft.Row(
                         tight=True,
+                        spacing=0,
                         controls=[
                             ft.IconButton(
                                 icon=ft.Icons.EDIT,
@@ -510,12 +532,12 @@ class GymAppView(ft.Column):
                     ft.OutlinedButton(
                         COMMON["cancel"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
+                        style=self.dialog_button_style
                     ),
                     ft.FilledButton(
                         IMPORT["continue"],
                         on_click=self._on_confirm_import_history_click,
-                        style=self.destructive_filled_button_style,
+                        style=self.dialog_destructive_filled_button_style,
                     ),
                 ],
             )
@@ -560,7 +582,7 @@ class GymAppView(ft.Column):
                     ft.FilledButton(
                         COMMON["accept"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
+                        style=self.dialog_button_style,
                     ),
                 ],
             )
@@ -586,6 +608,7 @@ class GymAppView(ft.Column):
                     ft.TextButton(
                         COMMON["accept"],
                         on_click=lambda e: self.page.pop_dialog(),
+                        style=self.dialog_button_style,
                     ),
                 ],
             )
@@ -646,6 +669,8 @@ class GymAppView(ft.Column):
                 else MACHINES["new_name"]
             ),
             value=machine_name,
+            text_style=ft.TextStyle(size=16),
+            label_style=ft.TextStyle(size=14),
             border=ft.OutlineInputBorder(border_radius=20),
             on_change=self._clear_field_error,
         )
@@ -697,14 +722,14 @@ class GymAppView(ft.Column):
                     ft.OutlinedButton(
                         COMMON["cancel"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
+                        style=self.dialog_button_style,
                     ),
                     ft.FilledButton(
                         MACHINES["create"]
                         if is_new
                         else MACHINES["rename"],
                         on_click=save_machine,
-                        style=self.button_style,
+                        style=self.dialog_button_style,
                     ),
                 ],
             )
@@ -757,12 +782,12 @@ class GymAppView(ft.Column):
                     ft.OutlinedButton(
                         COMMON["cancel"],
                         on_click=lambda e: self.page.pop_dialog(),
-                        style=self.button_style,
+                        style=self.dialog_button_style,
                     ),
                     ft.OutlinedButton(
                         MACHINES["delete"],
                         on_click=confirm_delete,
-                        style=self.destructive_button_style,
+                        style=self.dialog_destructive_button_style
                     ),
                 ],
             )

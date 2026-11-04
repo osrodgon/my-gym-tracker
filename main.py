@@ -15,14 +15,22 @@ def main(page: ft.Page):
         title_medium=ft.TextStyle(size=18),
     )
 
+    # Dialog theme for consistent dialog appearance
+    dialog_theme = ft.DialogTheme(
+        title_text_style=ft.TextStyle(size=20),
+        content_text_style=ft.TextStyle(size=16),
+    )
+
     # Set the theme for the page
     page.theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
-        text_theme=text_theme
+        text_theme=text_theme,
+        dialog_theme=dialog_theme,
     )
     page.dark_theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
-        text_theme=text_theme
+        text_theme=text_theme,
+        dialog_theme=dialog_theme,
     )
 
     # UI title in Spanish
