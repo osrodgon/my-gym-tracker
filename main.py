@@ -1,6 +1,7 @@
 import flet as ft
 from database import GymDatabase
 from ui.views import GymAppView
+from ui.texts import NAVIGATION
 
 def main(page: ft.Page):
     # Set the theme mode to system default (light/dark)
@@ -43,7 +44,7 @@ def main(page: ft.Page):
     )
 
     # UI title in Spanish
-    page.title = "🏋️‍♂️ Control de Gimnasio ORG"
+    page.title = NAVIGATION["app_name"]
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
