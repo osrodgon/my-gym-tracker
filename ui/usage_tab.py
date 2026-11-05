@@ -1,7 +1,7 @@
 import flet as ft
 import sqlite3
 
-from machine_images import MACHINE_IMAGES, get_machine_image_key
+from machine_images import MACHINE_IMAGES, get_machine_image_svg
 from ui.texts import USAGE, ERRORS
 from ui.utils import ButtonStyles, _DialogsMixin, format_date, is_dark_theme
 
@@ -140,11 +140,16 @@ class UsageTab(_DialogsMixin):
     def _update_machine_image(self, key: str | None) -> None:
         image_path = MACHINE_IMAGES.get(key) if key else None
         self._machine_image.visible = image_path is not None
-        self._machine_image.src = image_path or ""
-        if image_path is not None:
-            self._machine_image.color = (
-                ft.Colors.WHITE if is_dark_theme(self._page) else ft.Colors.BLACK
-            )
+        self._machine_image.src = ""
+
+        if image_path is None:
+            self._machine_image.src_base64 = ""
+            return
+
+        self._machine_image.src = get_machine_image_svg(
+            key,
+            dark=is_dark_theme(self._page),
+        )
 
     def _clear_field_error(self, e) -> None:
         if e.control.error is not None:

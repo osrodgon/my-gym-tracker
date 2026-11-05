@@ -1,7 +1,7 @@
 import flet as ft
 import sqlite3
 
-from machine_images import MACHINE_IMAGES, get_machine_image_key
+from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
 from ui.texts import COMMON, MACHINES, ERRORS
 from ui.utils import ButtonStyles, _DialogsMixin, is_dark_theme
 
@@ -163,12 +163,11 @@ class MachinesTab(_DialogsMixin):
         )
 
         image_preview = ft.Image(
-            src=MACHINE_IMAGES[initial_image_key] if initial_image_key else "",
-            width=160,
-            height=120,
-            fit=ft.BoxFit.CONTAIN,
-            color=ft.Colors.WHITE if self._is_dark_theme() else ft.Colors.BLACK,
-        )
+        src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
+        width=160,
+        height=120,
+        fit=ft.BoxFit.CONTAIN,
+    )
         image_preview_container = ft.Container(
             content=image_preview,
             width=200,
@@ -187,7 +186,10 @@ class MachinesTab(_DialogsMixin):
             )
             selected_key = image_dropdown.value
             has_image = selected_key is not None and selected_key != "none"
-            image_preview.src = MACHINE_IMAGES[selected_key] if has_image else ""
+            image_preview.src = get_machine_image_svg(
+                selected_key if has_image else None,
+                dark=self._is_dark_theme(),
+            )
             preview_row.visible = has_image
             preview_row.update()
 
