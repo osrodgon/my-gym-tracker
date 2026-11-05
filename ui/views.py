@@ -56,6 +56,7 @@ class GymAppView(ft.Column):
             src="",
             expand=True,
         )
+        self.machine_image_keys = {}
 
         self._build_ui()
 
@@ -293,52 +294,24 @@ class GymAppView(ft.Column):
             )
         )
 
-    def _update_machine_image(self, machine_name):
-        normalized = unicodedata.normalize("NFKD", machine_name)
-        slug = re.sub(
-            r"[^a-z0-9]+",
-            "-",
-            normalized.encode("ascii", "ignore").decode().lower(),
-        ).strip("-")
+    def _update_machine_image(self, key):
+        image_path = MACHINE_IMAGES.get(key) if key else None
+        self.machine_image.visible = image_path is not None
+        self.machine_image.src = image_path or ""
 
-        filename = f"{slug}.svg"
-        file_path = (
-            Path(__file__).resolve().parent.parent
-            / "assets"
-            / "machines"
-            / filename
-        )
-
-        self.machine_image.visible = file_path.is_file()
-        if self.machine_image.visible:
-            self.machine_image.src = f"machines/{filename}"
-            is_dark = (
-                self.page.theme_mode == ft.ThemeMode.DARK
-                or (
-                    self.page.theme_mode == ft.ThemeMode.SYSTEM
-                    and self.page.platform_brightness == ft.Brightness.DARK
-                )
-            )
+        if image_path is not None:
             self.machine_image.color = (
-                ft.Colors.WHITE if is_dark else ft.Colors.BLACK
+                ft.Colors.WHITE if self._is_dark_theme() else ft.Colors.BLACK
             )
 
     def _on_platform_brightness_change(self, e):
-        selected_key = self.machine_dropdown.value
-        if not selected_key:
+        selected_machine_id = self.machine_dropdown.value
+        if not selected_machine_id:
             return
 
-        option = next(
-            (
-                option
-                for option in self.machine_dropdown.options
-                if option.key == selected_key
-            ),
-            None,
-        )
-        if option is not None:
-            self._update_machine_image(option.text)
-            self.update()
+        image_key = self.machine_image_keys.get(selected_machine_id)
+        self._update_machine_image(image_key)
+        self.update()
 
     def update_data(self):
         results = self.db.get_summary()
@@ -484,6 +457,10 @@ class GymAppView(ft.Column):
         ]
 
     def _update_machine_options(self, machines):
+        self.machine_image_keys = {
+            str(machine_id): image_key
+            for machine_id, _, image_key in machines
+        }
         self.machine_dropdown.options = [
             ft.DropdownOption(text=name, key=str(machine_id))
             for machine_id, name, _ in machines
@@ -503,17 +480,15 @@ class GymAppView(ft.Column):
     
     def _on_machine_selected(self, e):
         if not self.machine_dropdown.value:
+            self.machine_image.visible = False
             self.latest_usage_text.value = (
                 USAGE["select_machine"]
             )
         else:
-            machine_name = self.machine_dropdown.options[
-                next(
-                    i for i, option in enumerate(self.machine_dropdown.options)
-                    if option.key == self.machine_dropdown.value
-                )
-            ].text
-            self._update_machine_image(machine_name)
+            selected_machine_id = self.machine_dropdown.value
+            image_key = self.machine_image_keys.get(selected_machine_id)
+            self._update_machine_image(image_key)
+
             latest_usage = self.db.get_latest_usage(
                 int(self.machine_dropdown.value)
             )

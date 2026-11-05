@@ -143,8 +143,11 @@ class GymDatabase:
             cursor.execute("DELETE FROM machines")
 
             cursor.executemany(
-                "INSERT INTO machines (name) VALUES (?)",
-                [(name,) for name in machines],
+                "INSERT INTO machines (name, image_key) VALUES (?, ?)",
+                [
+                    (name, get_machine_image_key(name))
+                    for name in machines
+                ],
             )
 
             machine_ids = {
