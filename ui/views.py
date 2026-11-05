@@ -9,6 +9,7 @@ import inspect
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
+from ui.machine_images import get_machine_image_key
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES, NAVIGATION, USAGE, ERRORS, DATE
 
 class GymAppView(ft.Column):
@@ -470,13 +471,13 @@ class GymAppView(ft.Column):
                     ),
                 ),
             )
-            for machine_id, machine_name in machines
+            for machine_id, machine_name, _ in machines
         ]
 
     def _update_machine_options(self, machines):
         self.machine_dropdown.options = [
             ft.DropdownOption(text=name, key=str(machine_id))
-            for machine_id, name in machines
+            for machine_id, name, _ in machines
         ]
 
     def _reset_inputs(self):
@@ -701,10 +702,11 @@ class GymAppView(ft.Column):
                 return
 
             try:
+                image_key = get_machine_image_key(name)
                 if is_new:
-                    self.db.add_machine(name)
+                    self.db.add_machine(name, image_key)
                 else:
-                    self.db.rename_machine(machine_id, name)
+                    self.db.rename_machine(machine_id, name, image_key)
             except sqlite3.IntegrityError:
                 name_input.error = ERRORS["duplicate_machine"]
                 name_input.update()
@@ -761,7 +763,7 @@ class GymAppView(ft.Column):
         machine_id = int(self.machine_mod_dropdown.value)
 
         try:
-            self.db.rename_machine(machine_id, new_name)
+            self.db.rename_machine(machine_id, new_name, get_machine_image_key(new_name))
         except sqlite3.IntegrityError:
             self._show_error(ERRORS["duplicate_machine"])
             self.update()

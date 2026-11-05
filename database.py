@@ -1,6 +1,8 @@
 import sqlite3
 import datetime
 
+from ui.machine_images import MACHINE_IMAGES, get_machine_image_key
+
 class GymDatabase:
     def __init__(self, db_name="gym.db"):
         self.db_name = db_name
@@ -27,6 +29,26 @@ class GymDatabase:
                     FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE CASCADE
                 )
             """)
+            columns = {
+                row[1]
+                for row in cursor.execute("PRAGMA table_info(machines)")
+            }
+
+            if "image_key" not in columns:
+                cursor.execute("ALTER TABLE machines ADD COLUMN image_key TEXT")
+
+                machines = cursor.execute(
+                    "SELECT id, name FROM machines"
+                ).fetchall()
+
+                for machine_id, name in machines:
+                    image_key = get_machine_image_key(name)
+                    if image_key is not None:
+                        cursor.execute(
+                            "UPDATE machines SET image_key = ? WHERE id = ?",
+                            (image_key, machine_id),
+                        )
+
             conn.commit()
 
     def get_summary(self):
@@ -43,7 +65,9 @@ class GymDatabase:
     def get_machines(self):
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, name FROM machines ORDER BY name ASC")
+            cursor.execute(
+                "SELECT id, name, image_key FROM machines ORDER BY name ASC"
+            )
             return cursor.fetchall()
 
     def get_usage_history(self):
@@ -76,16 +100,28 @@ class GymDatabase:
             cursor.execute("INSERT INTO usages (machine_id, weight, date) VALUES (?, ?, ?)", (machine_id, weight, today))
             conn.commit()
 
-    def add_machine(self, name):
+    def add_machine(self, name, image_key=None):
+        if image_key is not None and image_key not in MACHINE_IMAGES:
+            raise ValueError(f"Unknown machine image key: {image_key}")
+
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO machines (name) VALUES (?)", (name,))
+            cursor.execute(
+                "INSERT INTO machines (name, image_key) VALUES (?, ?)",
+                (name, image_key),
+            )
             conn.commit()
 
-    def rename_machine(self, machine_id, new_name):
+    def rename_machine(self, machine_id, new_name, image_key=None):
+        if image_key is not None and image_key not in MACHINE_IMAGES:
+            raise ValueError(f"Unknown machine image key: {image_key}")
+
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE machines SET name = ? WHERE id = ?", (new_name, machine_id))
+            cursor.execute(
+                "UPDATE machines SET name = ?, image_key = ? WHERE id = ?",
+                (new_name, image_key, machine_id),
+            )
             conn.commit()
 
     def delete_machine(self, machine_id):
