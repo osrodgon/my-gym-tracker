@@ -28,6 +28,7 @@ class GymAppView(ft.Column):
         )
         self.machine_dropdown = ft.Dropdown(
             label=USAGE["machine_label"],
+            value="",
             border=ft.OutlineInputBorder(border_radius=20),
             on_select=self._on_machine_selected,
             expand=True,
@@ -119,7 +120,7 @@ class GymAppView(ft.Column):
                     ft.Container(
                         content=ft.FloatingActionButton(
                             icon=ft.Icons.MORE_VERT,
-                            tooltip="Opciones del histórico",
+                            tooltip=HISTORY["options_tooltip"],
                             on_click=self._show_history_actions,
                             mini=True,
                             shape=ft.CircleBorder(),
@@ -467,11 +468,17 @@ class GymAppView(ft.Column):
         ]
 
     def _reset_inputs(self):
-        self.machine_dropdown.value = None
+        self.machine_dropdown.value = ""
         self.latest_usage_text.value = USAGE["select_machine"]
         self.weight_input.value = ""
         self.weight_input.error = None
         self.machine_image.visible = False
+
+        if (
+            self.selected_section == 0
+            and self.machine_dropdown.page is not None
+        ):
+            self.machine_dropdown.update()
 
     def _clear_field_error(self, e):
         if e.control.error is not None:
@@ -593,6 +600,9 @@ class GymAppView(ft.Column):
 
         self.selected_section = index
         self.content_container.content = self.sections[index][1]
+
+        if index == 0:
+            self._reset_inputs()
 
         self.update()
 

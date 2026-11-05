@@ -1,7 +1,7 @@
 NAVIGATION = {
     "app_name": "Mi Gimnasio",
-    "usage": "Añadir",
-    "history": "Histórico",
+    "usage": "Registrar",
+    "history": "Historial",
     "machines": "Máquinas",
 }
 
@@ -11,47 +11,45 @@ COMMON = {
 }
 
 USAGE = {
-    "machine_label": "Selecciona máquina",
+    "machine_label": "Máquina",
     "weight_label": "Peso (kg)",
-    "select_machine": "Selecciona una máquina para consultar su último registro.",
-    "no_records": "Esta máquina todavía no tiene registros.",
-    "latest_weight": "Último peso registrado: {weight} kg ({date})",
+    "select_machine": "Selecciona una máquina para ver su último registro.",
+    "no_records": "Aún no hay registros para esta máquina.",
+    "latest_weight": "Último uso: {weight} kg · {date}",
     "heading": "Registrar entrenamiento",
-    "save": "Guardar Uso",
+    "save": "Guardar uso",
 }
 
 HISTORY = {
-    "heading": "Último peso registrado por máquina",
+    "heading": "Historial por máquina",
     "empty_no_machines": "Todavía no hay máquinas registradas.",
-    "empty_no_usages": "Aún no hay entrenamientos registrados. Añade un uso para ver aquí el histórico.",
-    "export": "Exportar historial a Excel",
+    "empty_no_usages": "Aún no hay usos. Registra uno para ver el historial.",
+    "export": "Exportar a Excel",
     "import": "Importar desde Excel",
+    "options_tooltip": "Opciones del historial",
     "latest": "Último: {weight} kg · {date}",
     "weight": "{weight} kg",
 }
 
 MACHINES = {
-    "create_heading": "Añadir Máquina Nueva",
-    "new_name_label": "Nombre nueva máquina",
-    "create": "Crear Máquina",
-    "rename_heading": "Modificar Nombre",
-    "select_to_rename": "Máquina a modificar",
-    "new_name": "Nuevo nombre",
-    "rename": "Actualizar Nombre",
-    "delete_heading": "Eliminar Máquina",
+    "create_heading": "Nueva máquina",
+    "new_name_label": "Nombre",
+    "create": "Crear máquina",
+    "rename_heading": "Editar máquina",
+    "select_to_rename": "Máquina a editar",
+    "new_name": "Nombre",
+    "rename": "Guardar cambios",
+    "delete_heading": "Eliminar máquina",
     "select_to_delete": "Máquina a eliminar",
     "delete": "Eliminar",
     "confirm_title": "Confirmar eliminación",
-    "confirm_message": (
-        "¿Seguro que quieres eliminar esta máquina? "
-        "También se borrarán sus registros de uso."
-    ),
+    "confirm_message": "Se eliminarán también sus registros. ¿Continuar?",
     "add_button": "Añadir máquina",
-    "empty_list": "Aún no hay máquinas. Añade una para comenzar.",
+    "empty_list": "Aún no hay máquinas. Añade una para empezar.",
     "edit_tooltip": "Editar máquina",
     "delete_tooltip": "Eliminar máquina",
-    "image_label": "Imagen de la máquina",
-    "no_image": "Ninguna",
+    "image_label": "Imagen",
+    "no_image": "Sin imagen",
 }
 
 IMPORT = {
@@ -81,12 +79,12 @@ ERRORS = {
     "duplicate_machine": "Ya existe una máquina con ese nombre.",
     "log_usage": "No se pudo guardar el registro: {error}",
     "add_machine": "No se pudo crear la máquina: {error}",
-    "rename_machine": "No se pudo cambiar el nombre: {error}",
+    "rename_machine": "No se pudieron guardar los cambios: {error}",
     "delete_machine": "No se pudo eliminar la máquina: {error}",
     "enter_machine_name": "Introduce el nombre de la máquina.",
-    "enter_new_name": "Introduce el nuevo nombre de la máquina.",
+    "enter_new_name": "Introduce el nombre de la máquina.",
     "select_machine_to_delete": "Selecciona la máquina que quieres eliminar.",
-    "select_machine_to_rename": "Selecciona la máquina que quieres modificar.",
+    "select_machine_to_rename": "Selecciona la máquina que quieres editar.",
 }
 
 DATE = {
@@ -95,4 +93,3 @@ DATE = {
         "jul", "ago", "sep", "oct", "nov", "dic",
     ),
 }
-
