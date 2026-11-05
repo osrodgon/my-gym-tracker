@@ -47,6 +47,8 @@ def main(page: ft.Page):
     page.title = NAVIGATION["app_name"]
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.window.width = 540
+    page.window.height = 960
 
     db = GymDatabase()
     
