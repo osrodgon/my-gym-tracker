@@ -56,6 +56,7 @@ def main(page: ft.Page):
         app_view._on_platform_brightness_change
     )
     page.services.append(app_view.file_picker)
+    page.navigation_bar = app_view.navigation_bar
     page.add(
         ft.SafeArea(
             content=app_view,
@@ -64,7 +65,6 @@ def main(page: ft.Page):
             expand=True,
         )
     )
-    page.navigation_bar = app_view.navigation_bar
     app_view.update_data()  # Initial call to load data when starting the application
 
 if __name__ == "__main__":

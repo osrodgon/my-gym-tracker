@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
 
-from ui.machine_images import MACHINE_IMAGES, get_machine_image_key
+from machine_images import MACHINE_IMAGES, get_machine_image_key
 
 class GymDatabase:
     def __init__(self, db_name="gym.db"):
@@ -9,7 +9,9 @@ class GymDatabase:
         self._init_db()
 
     def _connect(self):
-        return sqlite3.connect(self.db_name)
+        conn = sqlite3.connect(self.db_name)
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
 
     def _init_db(self):
         with self._connect() as conn:
@@ -167,3 +169,5 @@ class GymDatabase:
                     for usage_date, machine_name, weight in usages
                 ],
             )
+
+            conn.commit()
