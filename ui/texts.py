@@ -82,9 +82,7 @@ ERRORS = {
     "rename_machine": "No se pudieron guardar los cambios: {error}",
     "delete_machine": "No se pudo eliminar la máquina: {error}",
     "enter_machine_name": "Introduce el nombre de la máquina.",
-    "enter_new_name": "Introduce el nombre de la máquina.",
     "select_machine_to_delete": "Selecciona la máquina que quieres eliminar.",
-    "select_machine_to_rename": "Selecciona la máquina que quieres editar.",
 }
 
 DATE = {
