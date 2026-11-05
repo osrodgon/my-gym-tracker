@@ -50,6 +50,8 @@ MACHINES = {
     "empty_list": "Aún no hay máquinas. Añade una para comenzar.",
     "edit_tooltip": "Editar máquina",
     "delete_tooltip": "Eliminar máquina",
+    "image_label": "Imagen de la máquina",
+    "no_image": "Ninguna",
 }
 
 IMPORT = {

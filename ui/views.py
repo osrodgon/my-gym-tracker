@@ -9,7 +9,7 @@ import inspect
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
-from ui.machine_images import get_machine_image_key
+from ui.machine_images import MACHINE_IMAGES, get_machine_image_key
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES, NAVIGATION, USAGE, ERRORS, DATE
 
 class GymAppView(ft.Column):
@@ -284,6 +284,15 @@ class GymAppView(ft.Column):
             )
         ]
 
+    def _is_dark_theme(self):
+        return (
+            self.page.theme_mode == ft.ThemeMode.DARK
+            or (
+                self.page.theme_mode == ft.ThemeMode.SYSTEM
+                and self.page.platform_brightness == ft.Brightness.DARK
+            )
+        )
+
     def _update_machine_image(self, machine_name):
         normalized = unicodedata.normalize("NFKD", machine_name)
         slug = re.sub(
@@ -455,8 +464,8 @@ class GymAppView(ft.Column):
                             ft.IconButton(
                                 icon=ft.Icons.EDIT,
                                 tooltip=MACHINES["edit_tooltip"],
-                                on_click=lambda e, mid=machine_id, name=machine_name: (
-                                    self._show_machine_dialog(mid, name)
+                                on_click=lambda e, mid=machine_id, name=machine_name, key=image_key: (
+                                    self._show_machine_dialog(mid, name, key)
                                 ),
                             ),
                             ft.IconButton(
@@ -471,7 +480,7 @@ class GymAppView(ft.Column):
                     ),
                 ),
             )
-            for machine_id, machine_name, _ in machines
+            for machine_id, machine_name, image_key in machines
         ]
 
     def _update_machine_options(self, machines):
@@ -673,8 +682,15 @@ class GymAppView(ft.Column):
     def _on_add_machine_click(self, e):
         self._show_machine_dialog()
 
-    def _show_machine_dialog(self, machine_id=None, machine_name=""):
+    def _show_machine_dialog(
+        self,
+        machine_id=None,
+        machine_name="",
+        current_image_key=None,
+    ):
         is_new = machine_id is None
+        automatic_image_key = get_machine_image_key(machine_name)
+        initial_image_key = automatic_image_key or current_image_key
 
         name_input = ft.TextField(
             label=(
@@ -686,8 +702,84 @@ class GymAppView(ft.Column):
             text_style=ft.TextStyle(size=16),
             label_style=ft.TextStyle(size=14),
             border=ft.OutlineInputBorder(border_radius=20),
-            on_change=self._clear_field_error,
+            expand=True,
         )
+
+        image_dropdown = ft.Dropdown(
+            label=MACHINES["image_label"],
+            value=initial_image_key or "none",
+            border=ft.OutlineInputBorder(border_radius=20),
+            text_size=16,
+            label_style=ft.TextStyle(size=14),
+            options=[
+                ft.DropdownOption(
+                    key="none",
+                    text=MACHINES["no_image"],
+                ),
+                *[
+                    ft.DropdownOption(
+                        key=key,
+                        text=key.replace("-", " ").title(),
+                    )
+                    for key in MACHINE_IMAGES
+                ],
+            ],
+            on_select=lambda e: update_image_preview(),
+            expand=True,
+        )
+
+        image_preview = ft.Image(
+            src=(
+                MACHINE_IMAGES[initial_image_key]
+                if initial_image_key
+                else ""
+            ),
+            width=160,
+            height=120,
+            fit=ft.BoxFit.CONTAIN,
+            visible=initial_image_key is not None,
+        )
+        image_preview.color = (
+            ft.Colors.WHITE if self._is_dark_theme() else ft.Colors.BLACK
+        )
+        image_preview_container = ft.Container(
+            content=image_preview,
+            width=200,
+            height=140,
+            alignment=ft.Alignment.CENTER,
+        )
+
+        def update_image_preview():
+            image_preview.color = (
+                ft.Colors.WHITE if self._is_dark_theme() else ft.Colors.BLACK
+            )
+            selected_key = image_dropdown.value
+            image_preview.visible = (
+                selected_key is not None and selected_key != "none"
+            )
+            image_preview.src = (
+                MACHINE_IMAGES[selected_key]
+                if image_preview.visible
+                else ""
+            )
+            image_preview.update()
+
+        def handle_name_change(e):
+            nonlocal automatic_image_key
+
+            self._clear_field_error(e)
+            new_automatic_key = get_machine_image_key(name_input.value or "")
+
+            if new_automatic_key is not None:
+                automatic_image_key = new_automatic_key
+                image_dropdown.value = new_automatic_key
+                update_image_preview()
+            elif image_dropdown.value == automatic_image_key:
+                automatic_image_key = None
+                image_dropdown.value = "none"
+                update_image_preview()
+
+        name_input.on_change = handle_name_change
 
         def save_machine(e):
             name = (name_input.value or "").strip()
@@ -701,12 +793,20 @@ class GymAppView(ft.Column):
                 name_input.update()
                 return
 
+            selected_key = image_dropdown.value
+            image_key = (
+                None if selected_key == "none" else selected_key
+            )
+
             try:
-                image_key = get_machine_image_key(name)
                 if is_new:
                     self.db.add_machine(name, image_key)
                 else:
-                    self.db.rename_machine(machine_id, name, image_key)
+                    self.db.rename_machine(
+                        machine_id,
+                        name,
+                        image_key,
+                    )
             except sqlite3.IntegrityError:
                 name_input.error = ERRORS["duplicate_machine"]
                 name_input.update()
@@ -732,7 +832,18 @@ class GymAppView(ft.Column):
                     if is_new
                     else MACHINES["rename_heading"]
                 ),
-                content=name_input,
+                content=ft.Column(
+                    tight=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                    controls=[
+                        ft.Row(controls=[name_input]),
+                        ft.Row(controls=[image_dropdown]),
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            controls=[image_preview_container],
+                        ),
+                    ],
+                ),
                 actions=[
                     ft.OutlinedButton(
                         COMMON["cancel"],
@@ -749,7 +860,7 @@ class GymAppView(ft.Column):
                 ],
             )
         )
-
+    
     def _on_rename_machine_click(self, e):
         if not self.machine_mod_dropdown.value:
            self._show_error(ERRORS["select_machine_to_rename"])
