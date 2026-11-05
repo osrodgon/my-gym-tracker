@@ -484,6 +484,7 @@ class GymAppView(ft.Column):
         self.latest_usage_text.value = USAGE["select_machine"]
         self.weight_input.value = ""
         self.weight_input.error = None
+        self.machine_image.visible = False
 
     def _clear_field_error(self, e):
         if e.control.error is not None:
