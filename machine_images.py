@@ -6,21 +6,21 @@ from pathlib import Path
 # The keys are the filenames without extension and serve as stable 
 # identifiers, independent of the machine name.
 MACHINE_IMAGES = {
-    "abdominales": "machines/abdominales.svg",
-    "abduccion": "machines/abduccion.svg",
-    "contraccion-abdominal": "machines/contraccion-abdominal.svg",
-    "curl-de-biceps": "machines/curl-de-biceps.svg",
-    "curl-de-piernas": "machines/curl-de-piernas.svg",
-    "extension-de-espalda": "machines/extension-de-espalda.svg",
-    "extension-de-gemelos": "machines/extension-de-gemelos.svg",
-    "extension-de-piernas": "machines/extension-de-piernas.svg",
-    "extension-de-triceps": "machines/extension-de-triceps.svg",
-    "jalon-al-pecho": "machines/jalon-al-pecho.svg",
-    "mancuernas": "machines/mancuernas.svg",
-    "press-de-hombros": "machines/press-de-hombros.svg",
-    "press-de-pecho": "machines/press-de-pecho.svg",
-    "press-de-piernas": "machines/press-de-piernas.svg",
-    "press-de-triceps": "machines/press-de-triceps.svg",
+    "abdominales": "machines/abs.svg",
+    "abduccion": "machines/abduction.svg",
+    "contraccion-abdominal": "machines/abdominal-crunch.svg",
+    "curl-de-biceps": "machines/bicep-curl.svg",
+    "curl-de-piernas": "machines/leg-curl.svg",
+    "extension-de-espalda": "machines/back-extension.svg",
+    "extension-de-gemelos": "machines/calf-extension.svg",
+    "extension-de-piernas": "machines/leg-extension.svg",
+    "extension-de-triceps": "machines/tricep-extension.svg",
+    "jalon-al-pecho": "machines/lat-pulldown.svg",
+    "mancuernas": "machines/dumbbells.svg",
+    "press-de-hombros": "machines/shoulder-press.svg",
+    "press-de-pecho": "machines/chest-press.svg",
+    "press-de-piernas": "machines/leg-press.svg",
+    "press-de-triceps": "machines/tricep-press.svg",
 }
 
 _INVERTED_COLORS = {
