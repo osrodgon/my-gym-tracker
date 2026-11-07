@@ -131,7 +131,11 @@ class MachinesTab(_DialogsMixin):
     ) -> None:
         is_new = machine_id is None
         automatic_image_key = get_machine_image_key(machine_name)
-        initial_image_key = automatic_image_key or current_image_key
+        initial_image_key = (
+            automatic_image_key or current_image_key
+            if is_new
+            else current_image_key
+        )
 
         name_input = ft.TextField(
             label=MACHINES["new_name_label"] if is_new else MACHINES["new_name"],
