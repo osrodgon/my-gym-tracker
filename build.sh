@@ -4,6 +4,44 @@ set -euo pipefail
 PROJECT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd "$PROJECT_DIR"
 
+# Show usage help if no argument or invalid argument is provided
+usage() {
+    echo "Usage: $0 {web|apk|linux|image}"
+    echo "  web   - Run the Flet web app (flet run main.py -w)"
+    echo "  apk   - Build Android APKs (--split-per-abi)"
+    echo "  linux - Build the Linux application (flet build linux)"
+    echo "  image - Build the AppImage package (automatically runs 'linux' build first)"
+    exit 1
+}
+
+[[ $# -eq 1 ]] || usage
+
+ACTION="$1"
+
+case "$ACTION" in
+    web)
+        echo "Running Flet web app..."
+        exec flet run main.py -w
+        ;;
+    apk)
+        echo "Building Android APKs..."
+        exec flet build apk --split-per-abi
+        ;;
+    linux)
+        echo "Building Linux app..."
+        exec flet build linux
+        ;;
+    image)
+        echo "Ensuring Linux build is up to date..."
+        flet build linux
+        ;;
+    *)
+        echo "Error: Unknown action '$ACTION'"
+        usage
+        ;;
+esac
+
+# --- AppImage Generation Logic ---
 BUILD_DIR="$PROJECT_DIR/build"
 BUNDLE="$BUILD_DIR/linux"
 
