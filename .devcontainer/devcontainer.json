@@ -12,10 +12,29 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libfuse2 && pip3 install --user -r requirements.txt",
+	"postCreateCommand": "bash .devcontainer/setup.sh",
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"tal7aouy.indent-colorizer",
+				"gnramsay.create-python-module",
+				"kevinrose.vsc-python-indent",
+				"shamanu4.django-intellisense",
+				"njpwerner.autodocstring",
+				"google.geminicodeassist",
+				"fedaykindev.openchamber",
+				// "daelonsuzuka.nicegui",
+				// "saoudrizwan.claude-dev",
+				// "lakefs.lakefs-dvc",
+				"sst-dev.opencode",
+				"tanishqkancharla.opencode-vscode"
+			]
+		}
+	},
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
