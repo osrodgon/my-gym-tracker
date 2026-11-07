@@ -35,7 +35,7 @@ class GymAppView(ft.Column):
         self._sections = [
             (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.FITNESS_CENTER),
             (NAVIGATION["history"],  self._history_tab.panel,  ft.Icons.HISTORY),
-            (NAVIGATION["machines"], self._machines_tab.panel, ft.Icons.SETTINGS),
+            (NAVIGATION["machines"], self._machines_tab.panel, ft.Icons.FORMAT_LIST_BULLETED),
         ]
         self._selected_section = 0
 
