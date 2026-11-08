@@ -1,65 +1,89 @@
-# Project Context: Mi Gimnasio - Gym Tracker App
+# Mi Gimnasio — agent notes
 
-## Tech Stack
-- **Framework:** Python with Flet (`flet`) version 1.0.5
-- **Primary Target:** Android (Mobile-First approach, touch UI, SafeArea, virtual keyboard awareness).
-- **Local Testing Environment:** AppImage / Flet Web (`flet run main.py`).
-- **Database:** SQLite (`gym.db`) via `database.py`.
+Gym tracker built with **Flet 1.0.5** (Python ≥3.10). Android-first, Spanish UI,
+SQLite persistence. Flet docs: https://flet.dev.
 
-## Architecture & Code Conventions
-This project follows a modular structure divided into functional tabs, each managing its own state:
+## Commands
 
-1. **Modular Components:** `main.py` is the entry point that instantiates `GymAppView`, which composes three tab objects (`UsageTab`, `HistoryTab`, `MachinesTab`). Each tab is a separate class in `ui/` directory.
+- `python main.py` — web build on `http://localhost:8550` (hardcoded in `main.py`)
+- `flet run main.py` — desktop window, for quick layout checks
+- `bash build.sh web|apk|linux|image` — same as `flet run main.py -w`,
+  `flet build apk --split-per-abi`, `flet build linux`, and the AppImage packager
+- No test suite, linter, or type checker is configured. Verify changes by running
+  the app; a source-level sanity check is `python -c "import main"`.
 
-2. **Mobile UI Optimization**: 
-   - Design for vertical touch screens (accessible buttons, use `ft.ListView` or `ft.Column(scroll=ft.ScrollMode.AUTO)`).
-   - Always wrap views in `ft.SafeArea` to prevent overlapping with system status bars or Android gesture areas.
-   - Material Design compliance: Use `ft.Colors.SURFACE`, `ft.Colors.ERROR` for destructive actions, and consistent typography.
+## Layout
 
-3. **State Management**: 
-   - Data flows from `GymDatabase` (SQLite) up through the tab classes.
-   - `GymAppView.update_data()` refreshes all tabs after any database mutation.
-   - Preferred calling `control.update()` over `page.update()` whenever possible to optimize rendering performance on Android.
+- `main.py` — entry point. Sets theme/dark theme, text styles, `page.title`,
+  window size, appends the `FilePicker` service, mounts `GymAppView` in a
+  `SafeArea`, attaches `page.navigation_bar`, then calls `update_data()`.
+- `ui/views.py` — `GymAppView(ft.Column)`: builds the 3-tab scaffold, swaps tab
+  panels on nav change, and exposes `update_data()` which pushes fresh DB rows
+  into all tabs.
+- `ui/usage_tab.py` — "Registrar": machine dropdown, weight field, last-used hint.
+- `ui/history_tab.py` — "Historial": grouped-by-machine cards with per-record
+  delete, plus export/import via a `BottomSheet` opened from the only FAB.
+- `ui/machines_tab.py` — "Máquinas": create/rename/delete, SVG preview.
+- `ui/texts.py` — every user-facing string (dicts: `NAVIGATION`, `COMMON`, `USAGE`,
+  `HISTORY`, `MACHINES`, `IMPORT`, `EXPORT`, `ERRORS`, `DATE`). Never hardcode UI text.
+- `ui/utils.py` — `ButtonStyles`, `_DialogsMixin` (`_show_snackbar`, `_show_error`,
+  `_show_message_dialog`), `format_date`, `is_dark_theme`.
+- `database.py` — `GymDatabase`: `get_summary`, `get_machines`, `get_usage_history`,
+  `get_latest_usage`, `log_use`, `add_machine`, `rename_machine`, `delete_machine`,
+  `delete_usage`, `delete_usage_by_machine_weight_date`, `replace_data`.
+- `machine_images.py` — machine-name → SVG key mapping; files in `assets/machines/`.
+- `xlsx_export.py` / `xlsx_import.py` — Excel I/O with stdlib `zipfile` + XML,
+  no `openpyxl`.
+- `build/` — generated output, never edit.
 
-4. **Local Compatibility:** Code must remain fully compatible with both local desktop execution (`flet run main.py`) and Android build tools (`flet build apk`).
+## Conventions
 
-5. **Code Verification:** Before referencing methods, properties, or classes, verify they exist in the current code state. Check class definitions, method signatures, and attribute declarations to prevent `AttributeError` issues. This is especially important after git operations, code resets, or when working with inherited/modified classes. Add `hasattr()` checks or review documentation when integrating new features.
+- Mobile-first: vertical touch layout, `ft.ListView` or
+  `ft.Column(scroll=ft.ScrollMode.AUTO)`, generous tap targets. The root is already
+  wrapped in `ft.SafeArea` in `main.py`.
+- Prefer `control.update()` over `page.update()`; `page.update()` only when the
+  whole tree changes.
+- After any DB mutation call the tab's `on_refresh` callback, which funnels into
+  `GymAppView.update_data()`. Don't render tabs directly from outside.
+- Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.OutlinedButton` with
+  `styles.dialog` / `styles.dialog_destructive`, `actions_alignment=ft.MainAxisAlignment.END`.
+  The bottom sheet in `history_tab.py` uses `show_drag_handle=True`; `AlertDialog`
+  does not support it.
+- Messages: `_show_snackbar` (2s, horizontal dismiss) for confirmations,
+  `_show_error` for failures. Both go through `page.show_dialog` / `page.pop_dialog`,
+  not the deprecated `page.snack_bar` / `page.dialog` fields.
+- Verify Flet API before use: `python -c "import flet as ft; print(hasattr(ft, 'X'))"`
+  or `dir(ft)`. This project pins 1.0.5 and uses the newer APIs (`ft.Icons`,
+  `ft.Colors`, `page.show_dialog`, `ft.run`). Read the installed source rather than
+  trusting memory when a name is uncertain.
+- Cards use `RoundedRectangleBorder(radius=20)`; text inputs use
+  `OutlineInputBorder(border_radius=20)`; buttons use radius 24 via `ButtonStyles`.
 
-6. **Flet Version Compatibility:** When using Flet framework constants (like `MainAxisAlignment`, `Colors`, `Icons`, etc.), verify they exist in the installed Flet version. Some constants (like `MainAxisEndpoint`) may only exist in newer Flet versions. Check `flet.__version__` and consult the [Flet documentation](https://flet.dev) for available constants. Use `dir(flet)` or `hasattr(flet, 'constant_name')` to verify before using framework features.
+## Material baseline
 
-7. **Consistent Dialog Patterns:** Follow the app's established dialog patterns for Material Design compliance. Use `ft.OutlinedButton` with `style=self._styles.dialog_destructive` for destructive actions, consistent title/content from `texts.py` dictionaries, and `actions_alignment=ft.MainAxisAlignment.END`. The History tab delete dialog now matches the Machines tab pattern to ensure UI consistency across the app.
+Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
+cards r20, outlined inputs r20, `AlertDialog`s, bottom sheet with drag handle,
+2s snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text
+themes (18–24px).
 
-This structure reflects the gym tracking application:
+## Known gaps
 
-- `main.py` - Entry point of the application. Creates `GymAppView` and configures the page.
-- `ui/views.py` - Main `GymAppView` view and navigation between tabs.
-- `ui/usage_tab.py` - "Register" tab (log usage). Manages the weight and machine form.
-- `ui/history_tab.py` - "History" tab. Shows the history with delete icons per entry.
-- `ui/machines_tab.py` - "Machines" tab. Machine management (create/edit/delete).
-- `ui/texts.py` - Dictionary of text strings (HISTORY, USAGE, MACHINES, ERRORS, etc.).
-- `ui/utils.py` - Shared utilities: `ButtonStyles`, `format_date`, `is_dark_theme`.
-- `database.py` - SQLite data access layer. Methods: `get_machines()`, `get_summary()`, `log_use()`, `add_machine()`, `delete_usage()`.
-- `machine_images.py` - Mapping of machine names to SVG images.
-- `build.sh` - Build and packaging script (web, apk, linux, image).
-- `assets/` - Graphic resources (icon, machine SVG images).
-- `gym.db` - SQLite database file (generated at runtime).
-- `build/` - Generated directory for builds and AppImage.
+This section is the single source of truth for pending work — update it when you
+finish or discover something instead of creating other status docs.
 
-## Material Design Compliance Notes
-- **Top App Bar:** Missing - pending implementation (Priority #1 in memory bank)
-- **Bottom Navigation:** Implemented with `ft.NavigationBar` (3 tabs: Register, History, Machines)
-- **FAB:** Present in history_tab.py for overflow options
-- **Cards:** Used with `radius=20` throughout
-- **Input Fields:** `OutlineInputBorder` with `border_radius=20`
-- **Dialogs:** `AlertDialog` with `show_drag_handle=True` for bottom sheets
-- **Snackbars:** Duration 2s, horizontal dismiss
-- **Color Scheme:** `color_scheme_seed=ft.Colors.BLUE`
-- **Adaptive Icons:** Not yet configured (pending in pyproject.toml)
-- **Typography:** TextStyles defined in main.py with sizes 18-24px
+- No top app bar (`page.appbar` is unset).
+- No explicit icon / adaptive-icon config in `pyproject.toml` (`[tool.flet]` only
+  has `org` and `product`; Flet falls back to `assets/icon.png`).
+- No elevation on button styles.
+- FAB exists only in the history tab; machines tab has none.
+- Snackbars have no action button.
 
-## Build Commands
-- `flet run main.py` - Run in web browser (local development)
-- `flet build apk --split-per-abi` - Build Android APKs
-- `flet build apk --product "Mi Gimnasio"` - Build with custom product name
-- `bash build.sh web` - Alternative web build command
-- `bash build.sh apk` - Alternative APK build command
+## Cautions
+
+- **No git operations in this workspace**: no `add`, `commit`, `push`, `pull`, or
+  remote sync. All changes stay local.
+- `gym.db` is runtime data created on first launch — don't treat it as source.
+- `replace_data()` truncates both tables; only use it for the import flow.
+- `delete_usage_by_machine_weight_date()` matches on (machine, weight, date), so
+  duplicate identical records are removed together; prefer `delete_usage(id)` when
+  an id is available.
