@@ -4,7 +4,7 @@ import sqlite3
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
-from ui.texts import COMMON, EXPORT, HISTORY, IMPORT
+from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES
 from ui.utils import ButtonStyles, _DialogsMixin, format_date
 
 
@@ -69,7 +69,7 @@ class HistoryTab(_DialogsMixin):
         grouped: dict = {}
         for machine_id, machine_name, weight, usage_date in results:
             if machine_id not in grouped:
-                grouped[machine_id] = {"name": machine_name, "entries": []}
+                grouped[machine_id] = {"name": machine_name, "entries": [], "id": machine_id}
             grouped[machine_id]["entries"].append((weight, usage_date))
 
         for machine in grouped.values():
@@ -91,10 +91,24 @@ class HistoryTab(_DialogsMixin):
                         controls=[
                             ft.ListTile(
                                 title=ft.Text(format_date(entry_date)),
-                                trailing=ft.Text(
-                                    HISTORY["weight"].format(weight=entry_weight),
-                                    theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
-                                    color=ft.Colors.PRIMARY,
+                                trailing=ft.Row(
+                                    tight=True,
+                                    spacing=10,
+                                    controls=[
+                                        ft.Text(
+                                            HISTORY["weight"].format(weight=entry_weight),
+                                            theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                                            color=ft.Colors.PRIMARY,
+                                        ),
+                                        ft.IconButton(
+                                            icon=ft.Icons.DELETE,
+                                            icon_color=ft.Colors.ERROR,
+                                            tooltip=HISTORY["delete"],
+                                            on_click=lambda e, mid=machine["id"], w=entry_weight, d=entry_date: (
+                                                self._show_delete_confirmation(mid, w, d)
+                                            ),
+                                        ),
+                                    ],
                                 ),
                             )
                             for entry_weight, entry_date in entries
@@ -177,6 +191,38 @@ class HistoryTab(_DialogsMixin):
                 ),
             )
         )
+
+
+
+    def _show_delete_confirmation(self, machine_id: int, weight: float, date: str) -> None:
+        """Show confirmation dialog and delete the specific usage record."""
+        def _confirm_delete(e) -> None:
+            self._db.delete_usage_by_machine_weight_date(machine_id, weight, date)
+            # Refresh the data after deletion
+            self._on_refresh()
+            self._page.pop_dialog()
+
+        self._page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text(MACHINES["confirm_title"]),
+                content=ft.Text(HISTORY["delete_record"]),
+                actions=[
+                    ft.OutlinedButton(
+                        COMMON["cancel"],
+                        on_click=lambda e: self._page.pop_dialog(),
+                        style=self._styles.dialog,
+                    ),
+                    ft.OutlinedButton(
+                        MACHINES["delete"],
+                        on_click=_confirm_delete,
+                        style=self._styles.dialog_destructive,
+                    ),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+
 
     async def _on_export_history_click(self, e) -> None:
         history = self._db.get_usage_history()

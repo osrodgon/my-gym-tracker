@@ -131,6 +131,25 @@ class GymDatabase:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM usages WHERE machine_id = ?", (machine_id,))
             cursor.execute("DELETE FROM machines WHERE id = ?", (machine_id,))
+
+
+
+
+    def delete_usage_by_machine_weight_date(self, machine_id: int, weight: float, date: str) -> None:
+        """Delete a usage record by machine_id, weight, and date combination."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM usages WHERE machine_id = ? AND weight = ? AND date = ?",
+                (machine_id, weight, date),
+            )
+            conn.commit()
+
+    def delete_usage(self, usage_id: int) -> None:
+        """Delete a usage record by ID."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM usages WHERE id = ?", (usage_id,))
             conn.commit()
 
     def replace_data(
