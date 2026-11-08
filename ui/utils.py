@@ -13,6 +13,11 @@ def format_date(iso_date: str) -> str:
     return f"{parsed.day} {month_names[parsed.month - 1]}. {parsed.year}"
 
 
+def format_weight(weight: float) -> str:
+    """Format a weight with the Spanish decimal separator."""
+    return str(weight).replace(".", ",")
+
+
 def is_dark_theme(page: ft.Page) -> bool:
     """Return True when the current effective theme is dark."""
     return (
