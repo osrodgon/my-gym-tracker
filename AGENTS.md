@@ -58,6 +58,10 @@ SQLite persistence. Flet docs: https://flet.dev.
   trusting memory when a name is uncertain.
 - Cards use `RoundedRectangleBorder(radius=20)`; text inputs use
   `OutlineInputBorder(border_radius=20)`; buttons use radius 24 via `ButtonStyles`.
+- Weights are floats in the DB and are shown with `format_weight()` (`ui/utils.py`),
+  which uses the Spanish comma and always keeps a decimal (`80` → `80,0`). The
+  weight field accepts only a comma decimal separator; a dot is rejected with a
+  snackbar message.
 
 ## Material baseline
 
@@ -75,31 +79,25 @@ finish or discover something instead of creating other status docs.
 
 1. `get_machine_image_svg()` raises `KeyError` for a key missing from
    `MACHINE_IMAGES` instead of falling back to "Sin imagen".
-2. Weight input validates only `float()`; zero, negative and `nan` are accepted.
-   Tracked in #50.
-3. Excel export omits `machines.image_key`.
-4. Excel import recomputes `image_key` from the machine name, so exported images
+2. Excel export omits `machines.image_key`.
+3. Excel import recomputes `image_key` from the machine name, so exported images
    come back missing or changed.
-5. History delete has no `sqlite3.Error` handling, so a DB failure escapes as an
+4. History delete has no `sqlite3.Error` handling, so a DB failure escapes as an
    uncaught exception.
-6. Saving a usage gives no success feedback.
-7. `log_use()` always stamps today's date; there is no backfill.
-8. Export gives no feedback: `_on_export_history_click` ignores the value returned
+5. Saving a usage gives no success feedback.
+6. Export gives no feedback: `_on_export_history_click` ignores the value returned
    by `save_file`, so a cancel looks like a success.
-9. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
+7. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-10. Brightness changes repaint only the usage-tab preview; an open machine dialog
-    keeps stale colours.
-11. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
-    silently falls back to `assets/icon.png`.
-12. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
+8. Brightness changes repaint only the usage-tab preview; an open machine dialog
+   keeps stale colours.
+9. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
+   silently falls back to `assets/icon.png`.
+10. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
     `xlsx_export.py` and `xlsx_import.py`.
-13. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
-14. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
-15. `GymDatabase.delete_usage(id)` is never called.
-16. Dead strings from the old dropdown rename/delete flow:
-    `MACHINES["delete_heading"]`, `select_to_rename`, `select_to_delete`,
-    `ERRORS["select_machine_to_delete"]`.
+11. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
+12. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
+13. `GymDatabase.delete_usage(id)` is never called.
 
 ### Android design guidelines
 
@@ -118,6 +116,8 @@ finish or discover something instead of creating other status docs.
 - **No git operations in this workspace**: no `add`, `commit`, `push`, `pull`, or
   remote sync. All changes stay local.
 - `gym.db` is runtime data created on first launch — don't treat it as source.
+- `log_use()` always stamps today's date on purpose: the app is meant to be used
+  at the machine, so backfilling past usages is out of scope.
 - `replace_data()` truncates both tables; only use it for the import flow.
 - `delete_usage_by_machine_weight_date()` matches on (machine, weight, date).
   A unique index on `usages(machine_id, date)` guarantees at most one row per

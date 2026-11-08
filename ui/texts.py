@@ -44,11 +44,8 @@ MACHINES = {
     "new_name_label": "Nombre",
     "create": "Crear máquina",
     "rename_heading": "Editar máquina",
-    "select_to_rename": "Máquina a editar",
     "new_name": "Nombre",
     "rename": "Guardar cambios",
-    "delete_heading": "Eliminar máquina",
-    "select_to_delete": "Máquina a eliminar",
     "delete": "Eliminar",
     "confirm_title": "Confirmar eliminación",
     "confirm_message": "Se eliminarán también sus registros. ¿Continuar?",
@@ -83,14 +80,17 @@ ERRORS = {
     "title": "No se pudo completar la acción",
     "select_machine": "Selecciona una máquina.",
     "enter_weight": "Introduce el peso utilizado.",
-    "invalid_weight": "El peso debe ser un número válido.",
+    "invalid_weight": (
+        "El peso debe ser un número válido. "
+        "Usa coma para los decimales (por ejemplo, 55,3)."
+    ),
+    "weight_out_of_range": "El peso debe ser mayor que 0 y no superar {max} kg.",
     "duplicate_machine": "Ya existe una máquina con ese nombre.",
     "log_usage": "No se pudo guardar el registro: {error}",
     "add_machine": "No se pudo crear la máquina: {error}",
     "rename_machine": "No se pudieron guardar los cambios: {error}",
     "delete_machine": "No se pudo eliminar la máquina: {error}",
     "enter_machine_name": "Introduce el nombre de la máquina.",
-    "select_machine_to_delete": "Selecciona la máquina que quieres eliminar.",
 }
 
 DATE = {

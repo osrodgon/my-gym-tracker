@@ -5,7 +5,7 @@ import sqlite3
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES
-from ui.utils import ButtonStyles, _DialogsMixin, format_date
+from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_weight
 
 
 class HistoryTab(_DialogsMixin):
@@ -83,7 +83,7 @@ class HistoryTab(_DialogsMixin):
                         title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
                         subtitle=ft.Text(
                             HISTORY["latest"].format(
-                                weight=latest_weight,
+                                weight=format_weight(latest_weight),
                                 date=format_date(latest_date),
                             ),
                             italic=True,
@@ -96,7 +96,9 @@ class HistoryTab(_DialogsMixin):
                                     spacing=10,
                                     controls=[
                                         ft.Text(
-                                            HISTORY["weight"].format(weight=entry_weight),
+                                            HISTORY["weight"].format(
+                                                weight=format_weight(entry_weight)
+                                            ),
                                             theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
                                             color=ft.Colors.PRIMARY,
                                         ),

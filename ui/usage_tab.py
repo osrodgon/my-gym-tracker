@@ -1,9 +1,21 @@
 import flet as ft
+import math
+import re
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_svg
 from ui.texts import COMMON, USAGE, ERRORS
-from ui.utils import ButtonStyles, _DialogsMixin, format_date, is_dark_theme
+from ui.utils import (
+    ButtonStyles,
+    _DialogsMixin,
+    format_date,
+    format_weight,
+    is_dark_theme,
+)
+
+
+_MAX_WEIGHT_KG = 1000
+_WEIGHT_RE = re.compile(r"^[+-]?\d+(?:,\d+)?$")
 
 
 class UsageTab(_DialogsMixin):
@@ -41,7 +53,6 @@ class UsageTab(_DialogsMixin):
             width=150,
             keyboard_type=ft.KeyboardType.NUMBER,
             border=ft.OutlineInputBorder(border_radius=20),
-            on_change=self._clear_field_error,
         )
         self._machine_image = ft.Image(
             fit=ft.BoxFit.CONTAIN,
@@ -78,7 +89,6 @@ class UsageTab(_DialogsMixin):
         self._machine_dropdown.value = ""
         self._latest_usage_text.value = USAGE["select_machine"]
         self._weight_input.value = ""
-        self._weight_input.error = None
         self._machine_image.visible = False
 
         if self._machine_dropdown.page is not None:
@@ -156,10 +166,24 @@ class UsageTab(_DialogsMixin):
             dark=is_dark_theme(self._page),
         )
 
-    def _clear_field_error(self, e) -> None:
-        if e.control.error is not None:
-            e.control.error = None
-            e.control.update()
+    def _parse_weight(self) -> float | None:
+        raw = (self._weight_input.value or "").strip()
+        if not raw:
+            self._show_snackbar(ERRORS["enter_weight"])
+            return None
+
+        if not _WEIGHT_RE.fullmatch(raw):
+            self._show_snackbar(ERRORS["invalid_weight"])
+            return None
+
+        weight = float(raw.replace(",", "."))
+        if not math.isfinite(weight) or weight <= 0 or weight > _MAX_WEIGHT_KG:
+            self._show_snackbar(
+                ERRORS["weight_out_of_range"].format(max=_MAX_WEIGHT_KG)
+            )
+            return None
+
+        return weight
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -179,7 +203,7 @@ class UsageTab(_DialogsMixin):
             else:
                 weight, usage_date = latest
                 self._latest_usage_text.value = USAGE["latest_weight"].format(
-                    weight=weight, date=format_date(usage_date)
+                    weight=format_weight(weight), date=format_date(usage_date)
                 )
 
         if self._page is not None:
@@ -190,14 +214,8 @@ class UsageTab(_DialogsMixin):
             self._show_snackbar(ERRORS["select_machine"])
             return
 
-        if not self._weight_input.value:
-            self._show_snackbar(ERRORS["enter_weight"])
-            return
-
-        try:
-            weight = float(self._weight_input.value)
-        except ValueError:
-            self._show_snackbar(ERRORS["invalid_weight"])
+        weight = self._parse_weight()
+        if weight is None:
             return
 
         machine_id = int(self._machine_dropdown.value)
@@ -251,8 +269,8 @@ class UsageTab(_DialogsMixin):
                 content=ft.Text(
                     USAGE["duplicate_message"].format(
                         machine=machine_name,
-                        weight=stored_weight,
-                        new_weight=new_weight,
+                        weight=format_weight(stored_weight),
+                        new_weight=format_weight(new_weight),
                     )
                 ),
                 actions=[
