@@ -18,6 +18,12 @@ USAGE = {
     "latest_weight": "Último uso: {weight} kg · {date}",
     "heading": "Registrar entrenamiento",
     "save": "Guardar uso",
+    "duplicate_title": "Registro duplicado",
+    "duplicate_message": (
+        "Ya has registrado {machine} hoy con {weight} kg. "
+        "¿Sobrescribir el registro con {new_weight} kg?"
+    ),
+    "overwrite": "Sobrescribir",
 }
 
 HISTORY = {

@@ -31,6 +31,11 @@ class GymDatabase:
                     FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE CASCADE
                 )
             """)
+            self._dedupe_usages(cursor)
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_usages_machine_date
+                ON usages (machine_id, date)
+            """)
             columns = {
                 row[1]
                 for row in cursor.execute("PRAGMA table_info(machines)")
@@ -52,6 +57,32 @@ class GymDatabase:
                         )
 
             conn.commit()
+
+    def _dedupe_usages(self, cursor):
+        """Keep only the newest usage per machine and date before indexing."""
+        has_duplicates = cursor.execute("""
+            SELECT 1
+            FROM usages
+            GROUP BY machine_id, date
+            HAVING COUNT(*) > 1
+            LIMIT 1
+        """).fetchone()
+
+        if has_duplicates is None:
+            return
+
+        cursor.execute("""
+            DELETE FROM usages
+            WHERE id NOT IN (
+                SELECT MAX(id)
+                FROM usages
+                GROUP BY machine_id, date
+            )
+        """)
+
+    @staticmethod
+    def _today() -> str:
+        return datetime.date.today().strftime("%Y-%m-%d")
 
     def get_summary(self):
         with self._connect() as conn:
@@ -95,11 +126,31 @@ class GymDatabase:
             """, (machine_id,))
             return cursor.fetchone()
 
+    def get_usage_for_date(self, machine_id, usage_date=None):
+        usage_date = usage_date or self._today()
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, weight FROM usages WHERE machine_id = ? AND date = ?",
+                (machine_id, usage_date),
+            )
+            return cursor.fetchone()
+
     def log_use(self, machine_id, weight):
-        today = datetime.date.today().strftime("%Y-%m-%d")
+        today = self._today()
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO usages (machine_id, weight, date) VALUES (?, ?, ?)", (machine_id, weight, today))
+            conn.commit()
+
+    def update_usage_weight(self, usage_id: int, weight: float) -> None:
+        """Update the weight of an existing usage record."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE usages SET weight = ? WHERE id = ?",
+                (weight, usage_id),
+            )
             conn.commit()
 
     def add_machine(self, name, image_key=None):
@@ -178,6 +229,12 @@ class GymDatabase:
                 ).fetchall()
             }
 
+            # The unique index allows one usage per machine and date, so an
+            # imported workbook with duplicates keeps the last row for each pair.
+            unique_usages: dict[tuple[str, str], float] = {}
+            for usage_date, machine_name, weight in usages:
+                unique_usages[(usage_date, machine_name)] = weight
+
             cursor.executemany(
                 """
                 INSERT INTO usages (date, machine_id, weight)
@@ -185,7 +242,7 @@ class GymDatabase:
                 """,
                 [
                     (usage_date, machine_ids[machine_name], weight)
-                    for usage_date, machine_name, weight in usages
+                    for (usage_date, machine_name), weight in unique_usages.items()
                 ],
             )
 

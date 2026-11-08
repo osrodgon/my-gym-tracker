@@ -2,7 +2,7 @@ import flet as ft
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_svg
-from ui.texts import USAGE, ERRORS
+from ui.texts import COMMON, USAGE, ERRORS
 from ui.utils import ButtonStyles, _DialogsMixin, format_date, is_dark_theme
 
 
@@ -22,6 +22,7 @@ class UsageTab(_DialogsMixin):
         self._styles = styles
         self._on_refresh = on_refresh
         self._machine_image_keys: dict[str, str | None] = {}
+        self._machine_names: dict[str, str] = {}
 
         self._machine_dropdown = ft.Dropdown(
             label=USAGE["machine_label"],
@@ -63,6 +64,10 @@ class UsageTab(_DialogsMixin):
         self._machine_image_keys = {
             str(machine_id): image_key
             for machine_id, _, image_key in machines
+        }
+        self._machine_names = {
+            str(machine_id): name
+            for machine_id, name, _ in machines
         }
         self._machine_dropdown.options = [
             ft.DropdownOption(text=name, key=str(machine_id))
@@ -195,10 +200,73 @@ class UsageTab(_DialogsMixin):
             self._show_snackbar(ERRORS["invalid_weight"])
             return
 
+        machine_id = int(self._machine_dropdown.value)
+
         try:
-            self._db.log_use(int(self._machine_dropdown.value), weight)
+            existing = self._db.get_usage_for_date(machine_id)
+        except sqlite3.Error as exc:
+            self._show_snackbar(ERRORS["log_usage"].format(error=exc))
+            return
+
+        if existing is not None:
+            usage_id, stored_weight = existing
+            self._show_overwrite_dialog(
+                machine_id, usage_id, stored_weight, weight
+            )
+            return
+
+        self._save_usage(machine_id, weight)
+
+    def _save_usage(self, machine_id: int, weight: float) -> None:
+        try:
+            self._db.log_use(machine_id, weight)
         except sqlite3.Error as exc:
             self._show_snackbar(ERRORS["log_usage"].format(error=exc))
             return
 
         self._on_refresh()
+
+    def _show_overwrite_dialog(
+        self,
+        machine_id: int,
+        usage_id: int,
+        stored_weight: float,
+        new_weight: float,
+    ) -> None:
+        machine_name = self._machine_names.get(str(machine_id), "")
+
+        def _confirm_overwrite(e) -> None:
+            self._page.pop_dialog()
+            try:
+                self._db.update_usage_weight(usage_id, new_weight)
+            except sqlite3.Error as exc:
+                self._show_snackbar(ERRORS["log_usage"].format(error=exc))
+                return
+            self._on_refresh()
+
+        self._page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text(USAGE["duplicate_title"]),
+                content=ft.Text(
+                    USAGE["duplicate_message"].format(
+                        machine=machine_name,
+                        weight=stored_weight,
+                        new_weight=new_weight,
+                    )
+                ),
+                actions=[
+                    ft.OutlinedButton(
+                        COMMON["cancel"],
+                        on_click=lambda e: self._page.pop_dialog(),
+                        style=self._styles.dialog,
+                    ),
+                    ft.OutlinedButton(
+                        USAGE["overwrite"],
+                        on_click=_confirm_overwrite,
+                        style=self._styles.dialog_destructive,
+                    ),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
