@@ -71,12 +71,48 @@ themes (18–24px).
 This section is the single source of truth for pending work — update it when you
 finish or discover something instead of creating other status docs.
 
-- No top app bar (`page.appbar` is unset).
-- No explicit icon / adaptive-icon config in `pyproject.toml` (`[tool.flet]` only
-  has `org` and `product`; Flet falls back to `assets/icon.png`).
-- No elevation on button styles.
-- FAB exists only in the history tab; machines tab has none.
-- Snackbars have no action button.
+### Code issues
+
+1. `get_summary()` does not select `u.id`, so the history tab can only delete by
+   (machine, weight, date) and identical rows are removed together.
+2. `get_machine_image_svg()` raises `KeyError` for a key missing from
+   `MACHINE_IMAGES` instead of falling back to "Sin imagen".
+3. Weight input validates only `float()`; zero, negative and `nan` are accepted.
+4. Excel export omits `machines.image_key`.
+5. Excel import recomputes `image_key` from the machine name, so exported images
+   come back missing or changed.
+6. History delete has no `sqlite3.Error` handling, so a DB failure escapes as an
+   uncaught exception.
+7. Saving a usage gives no success feedback.
+8. `log_use()` always stamps today's date; there is no backfill.
+9. Export gives no feedback: `_on_export_history_click` ignores the value returned
+   by `save_file`, so a cancel looks like a success.
+10. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
+    on any refresh.
+11. Brightness changes repaint only the usage-tab preview; an open machine dialog
+    keeps stale colours.
+12. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
+    silently falls back to `assets/icon.png`.
+13. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
+    `xlsx_export.py` and `xlsx_import.py`.
+14. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
+15. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
+16. `GymDatabase.delete_usage(id)` is never called.
+17. Dead strings from the old dropdown rename/delete flow:
+    `MACHINES["delete_heading"]`, `select_to_rename`, `select_to_delete`,
+    `ERRORS["select_machine_to_delete"]`.
+
+### Android design guidelines
+
+1. Snackbars have no action button (no undo after a delete).
+2. No top app bar: `page.appbar` is unset, so the app name never appears in-app.
+   `page.title` only sets the browser/window title.
+3. `USAGE["heading"]` and `HISTORY["heading"]` exist but nothing renders them.
+4. The history FAB overlaps the last card; `_summary_list` has 4px bottom padding.
+5. FABs are inconsistent: only the history tab has one; the machines tab puts its
+   primary action in a bottom `FilledButton`.
+6. No adaptive-icon config in `pyproject.toml`; Android falls back to
+   `assets/icon.png`.
 
 ## Cautions
 
@@ -87,3 +123,6 @@ finish or discover something instead of creating other status docs.
 - `delete_usage_by_machine_weight_date()` matches on (machine, weight, date), so
   duplicate identical records are removed together; prefer `delete_usage(id)` when
   an id is available.
+- Adding `page.appbar` means reconciling it with the
+  `SafeArea(avoid_intrusions_top=True)` in `main.py`: both handle the status bar,
+  so the view gets extra top space.
