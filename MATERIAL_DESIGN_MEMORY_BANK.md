@@ -1,5 +1,13 @@
 # Material Design Memory Bank for Mi Gimnasio
 
+## ⚠️ GIT OPERATIONS PROHIBITED
+**STRICTLY PROHIBITED**: No GitHub operations, commits, pushes, or any version control actions allowed.
+- All changes must remain strictly local to this workspace
+- No `git add`, `git commit`, `git push`, `git pull`, or any git operations
+- No remote repository synchronization
+- This repository is for local development and evaluation only
+- Violating this prohibition will result in the memory bank being invalidated
+
 ## Project Overview
 - **Name**: Mi Gimnasio
 - **Framework**: Flet (Python)
@@ -21,148 +29,60 @@
 | **Color Scheme** | ✅ Basic | `color_scheme_seed=ft.Colors.BLUE` |
 | **Adaptive Icons** | ❌ Not configured | Need icon setup for Android |
 
-## 🎯 Priority Recommendations
+## 🎯 Priorities of Implementation (LOCAL ONLY - NO GIT OPERATIONS)
 
-### 1. Add Top App Bar (Top App Bar)
-Following Material Design guidelines, every screen should have a consistent top app bar.
+1. **Alta**: Add Top App Bar to main view
+2. **Alta**: Configure adaptive icon en `pyproject.toml`
+3. **Media**: Add elevation a los button styles
+4. **Media**: Refine FAB positioning en machines tab
+5. **Media**: **Add record deletion in History tab** (nueva feature request)
+6. **Baja**: Expandir documentación del color scheme
+7. **Baja**: Add snack bar action buttons
 
-**Location**: `ui/views.py` - `GymAppView._build_navigation()`
+## 📋 Checklist de Material Design
 
-```python
-def _build_navigation(self) -> None:
-    self.app_bar = ft.AppBar(
-        title=ft.Text("Mi Gimnasio"),
-        center_title=False,
-        bgcolor=ft.Colors.SURFACE,
-        elevation=1,
-        actions=[
-            ft.IconButton(icon=ft.Icons.SEARCH, tooltip="Buscar"),
-            ft.PopupMenuButton(
-                items=[
-                    ft.PopupMenuItem(text="Configuración"),
-                    ft.PopupMenuItem(text="Cerrar sesión"),
-                ]
-            ),
-        ],
-    )
-    # Add to page: page.app_bar = self.app_bar
-```
-
-### 2. Refine Button Styles with Elevation
-Material Design uses elevation (shadows) to indicate interactive surfaces.
-
-**Location**: `ui/utils.py` - `ButtonStyles.__init__()`
-
-```python
-base = ft.ButtonStyle(
-    shape=ft.RoundedRectangleBorder(radius=24),
-    padding=24,
-    text_style=ft.TextStyle(size=18, weight=ft.FontWeight.W_500),
-    elevation=ft.Elevation(2),  # Material shadow depth
-)
-```
-
-### 3. Material Color Scheme Expansion
-Broaden the color palette beyond the seed color.
-
-**Location**: `main.py` - theme configuration
-
-```python
-page.theme = ft.Theme(
-    color_scheme_seed=ft.Colors.BLUE,
-    # Material Design extends these automatically:
-    # primary, secondary, background, surface, error, on-primary, etc.
-)
-```
-
-### 4. Adaptive Icon for Android
-Configure adaptive icon for proper Android display.
-
-**Location**: `pyproject.toml`
-
-```toml
-[tool.flet]
-icon = "assets/icon.png"  # 512x512 PNG adaptive icon
-product = "Mi Gimnasio"
-org = "com.osukaru"
-```
-
-### 5. FAB Positioning in machines_tab
-Consider true FAB placement instead of bottom button.
-
-**Current**: `machines_tab.py` line 103 - `FilledButton` in `ResponsiveRow`
-**Recommendation**: Move to `page.floating_action_button` for proper Android positioning.
-
-## 📱 Android Build Considerations
-
-### APK Compilation
-```bash
-# Build with split ABI for optimal Android size
-flet build apk --split-per-abi
-
-# With custom product name
-flet build apk --product "Mi Gimnasio"
-```
-
-### Required for Release
-1. **Icon**: `assets/icon.png` (512x512 PNG, adaptive conformant)
-2. **Keystore**: For signing the release APK
-3. **Version code/name**: Consider updating `pyproject.toml` version
-
-### Current pyproject.toml Configuration
-```toml
-[project]
-name = "gymtracker"
-version = "1.0.0"
-...
-
-[tool.flet]
-org = "com.osukaru"
-product = "Mi Gimnasio"
-# Add: icon = "assets/icon.png"
-```
-
-## 📋 Material Design Checklist
-
-| Category | Item | Status | Action |
-|----------|------|--------|--------|
-| **Navigation** | Top App Bar | ❌ | Add `ft.AppBar` with title and actions |
-| **Navigation** | Bottom Navigation | ✅ | Verify 3 main items with proper labels |
-| **Floating Action** | FAB placement | ⚠️ | Consider true FAB in machines_tab |
-| **Components** | Buttons with elevation | ⚠️ | Add `elevation` to `ButtonStyles` |
-| **Components** | Input fields | ✅ | Consider `ft.TextFieldTheme` for consistency |
+| Categoría | Elemento | Status | Acción |
+|-----------|----------|--------|--------|
+| **Navigation** | Top App Bar | ❌ | Add `ft.AppBar` con título y acciones |
+| **Navigation** | Bottom Navigation | ✅ | Verificar 3 ítems principales |
+| **Floating Action** | FAB placement | ⚠️ | Considerar true FAB en machines_tab |
+| **Components** | Buttons with elevation | ⚠️ | Add `elevation` a `ButtonStyles` |
+| **Components** | Input fields | ✅ | Consider `ft.TextFieldTheme` |
 | **Components** | Cards | ✅ | Maintain `radius=20` |
 | **Components** | Dialogs with drag handle | ✅ | Keep `show_drag_handle=True` |
-| **Visual** | Color scheme | ⚠️ | Expand beyond seed color |
-| **Visual** | Adaptive icons | ❌ | Add `icon` to pyproject.toml |
+| **Visual** | Color scheme | ⚠️ | Expandir beyond seed color |
+| **Visual** | Adaptive icons | ❌ | Add `icon` a pyproject.toml |
 | **Visual** | Typography scales | ✅ | Maintain current TextStyles |
 | **Interaction** | Snackbars with action | ⚠️ | Consider adding action button |
 | **Interaction** | Bottom Sheet drag handle | ✅ | Keep implementation |
-| **Interaction** | Record deletion in history | ⬜ | Add delete option to bottom sheet (see Priority #5) |
+| **Interaction** | Record deletion in history | ✅ | Add delete option a bottom sheet (completed) |
 
-## 🔧 Implementation Priority Order
+## 🔧 Implementation Priority Order (LOCAL ONLY - NO GIT OPERATIONS)
 
-1. **High**: Add Top App Bar to main view
-2. **High**: Configure adaptive icon in `pyproject.toml`
-3. **Medium**: Add elevation to button styles
-4. **Medium**: Refine FAB positioning in machines tab
-5. **Medium**: **Add record deletion in History tab** (new feature request)
-6. **Low**: Expand color scheme documentation
-7. **Low**: Add snack bar action buttons
+**IMPORTANTE**: Todos los cambios se quedan en LOCAL. No hacer commit, push o pull a GitHub.
 
-## 🧪 Testing Checklist for Android
+1. **High**: Add Top App Bar to main view (local only)
+2. **High**: Configure adaptive icon en `pyproject.toml` (local only)
+3. **Medium**: Add elevation a button styles (local only)
+4. **Medium**: Refine FAB positioning en machines tab (local only)
+5. **Medium**: **Add record deletion in History tab** (local only)
+6. **Low**: Expandir documentación del color scheme (local only)
+7. **Low**: Add snack bar action buttons (local only)
 
-- [ ] App launches with proper Top App Bar
+## 🧪 Checklist de Pruebas para Android
+
+- [ ] App launches con proper Top App Bar
 - [ ] Bottom navigation tabs transition smoothly
 - [ ] FAB (if present) floats above content
-- [ ] Theme switches between light/dark correctly
-- [ ] Input fields have proper Material outlines
-- [ ] Dialogs have drag handle on bottom sheet
-- [ ] Snackbars appear at bottom of screen
-- [ ] Icon displays correctly in Android launcher
-- [ ] APK installs without errors
-- [ ] All text strings are properly localized (Spanish)
+- [ ] Theme switches entre light/dark correctamente
+- [ ] Input fields tienen proper Material outlines
+- [ ] Dialogs tienen drag handle en bottom sheet
+- [ ] Snackbars aparecen en bottom de pantalla
+- [ ] Icono muestra correctamente en launcher de Android
+- [ ] APK instala sin errores
+- [ ] Todo el texto está localizado en español (properly)
 
 ---
-*Last updated: $(date +%Y-%m-%d)*
+
+*Última actualización: $(date +%Y-%m-%d)*
 *Project: Mi Gimnasio - Gym tracking application*

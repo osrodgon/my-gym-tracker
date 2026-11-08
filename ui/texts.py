@@ -29,6 +29,8 @@ HISTORY = {
     "options_tooltip": "Opciones del historial",
     "latest": "Último: {weight} kg · {date}",
     "weight": "{weight} kg",
+    "delete": "Eliminar registro",
+    "delete_record": "¿Estás seguro de eliminar este registro?",
 }
 
 MACHINES = {
