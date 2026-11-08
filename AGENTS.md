@@ -73,32 +73,31 @@ finish or discover something instead of creating other status docs.
 
 ### Code issues
 
-1. `get_summary()` does not select `u.id`, so the history tab can only delete by
-   (machine, weight, date) and identical rows are removed together.
-2. `get_machine_image_svg()` raises `KeyError` for a key missing from
+1. `get_machine_image_svg()` raises `KeyError` for a key missing from
    `MACHINE_IMAGES` instead of falling back to "Sin imagen".
-3. Weight input validates only `float()`; zero, negative and `nan` are accepted.
-4. Excel export omits `machines.image_key`.
-5. Excel import recomputes `image_key` from the machine name, so exported images
+2. Weight input validates only `float()`; zero, negative and `nan` are accepted.
+   Tracked in #50.
+3. Excel export omits `machines.image_key`.
+4. Excel import recomputes `image_key` from the machine name, so exported images
    come back missing or changed.
-6. History delete has no `sqlite3.Error` handling, so a DB failure escapes as an
+5. History delete has no `sqlite3.Error` handling, so a DB failure escapes as an
    uncaught exception.
-7. Saving a usage gives no success feedback.
-8. `log_use()` always stamps today's date; there is no backfill.
-9. Export gives no feedback: `_on_export_history_click` ignores the value returned
+6. Saving a usage gives no success feedback.
+7. `log_use()` always stamps today's date; there is no backfill.
+8. Export gives no feedback: `_on_export_history_click` ignores the value returned
    by `save_file`, so a cancel looks like a success.
-10. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
-    on any refresh.
-11. Brightness changes repaint only the usage-tab preview; an open machine dialog
+9. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
+   on any refresh.
+10. Brightness changes repaint only the usage-tab preview; an open machine dialog
     keeps stale colours.
-12. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
+11. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
     silently falls back to `assets/icon.png`.
-13. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
+12. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
     `xlsx_export.py` and `xlsx_import.py`.
-14. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
-15. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
-16. `GymDatabase.delete_usage(id)` is never called.
-17. Dead strings from the old dropdown rename/delete flow:
+13. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
+14. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
+15. `GymDatabase.delete_usage(id)` is never called.
+16. Dead strings from the old dropdown rename/delete flow:
     `MACHINES["delete_heading"]`, `select_to_rename`, `select_to_delete`,
     `ERRORS["select_machine_to_delete"]`.
 
@@ -120,9 +119,12 @@ finish or discover something instead of creating other status docs.
   remote sync. All changes stay local.
 - `gym.db` is runtime data created on first launch — don't treat it as source.
 - `replace_data()` truncates both tables; only use it for the import flow.
-- `delete_usage_by_machine_weight_date()` matches on (machine, weight, date), so
-  duplicate identical records are removed together; prefer `delete_usage(id)` when
-  an id is available.
+- `delete_usage_by_machine_weight_date()` matches on (machine, weight, date).
+  A unique index on `usages(machine_id, date)` guarantees at most one row per
+  machine and day, so the match is exact; `delete_usage(id)` is unused.
+- `usages` has a unique index on `(machine_id, date)`: never insert a second row
+  for the same machine and day. Check with `get_usage_for_date()` and use
+  `update_usage_weight()` to overwrite. Imports deduplicate in `replace_data()`.
 - Adding `page.appbar` means reconciling it with the
   `SafeArea(avoid_intrusions_top=True)` in `main.py`: both handle the status bar,
   so the view gets extra top space.
