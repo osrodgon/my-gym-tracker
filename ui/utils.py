@@ -1,6 +1,7 @@
 import flet as ft
 from datetime import date
 
+from ui import design
 from ui.texts import DATE, ERRORS, COMMON
 
 _SNACKBAR_DURATION_MS = 2000
@@ -34,11 +35,15 @@ class ButtonStyles:
 
     def __init__(self):
         base = ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=24),
-            padding=24,
-            text_style=ft.TextStyle(size=18, weight=ft.FontWeight.W_500),
+            shape=ft.StadiumBorder(),
+            padding=design.BUTTON_PADDING,
+            icon_size=design.BUTTON_ICON_SIZE,
+            text_style=ft.TextStyle(
+                size=design.FONT_LABEL_LARGE, weight=ft.FontWeight.W_500
+            ),
         )
         self.default = base
+        self.primary = base.copy(padding=design.PRIMARY_BUTTON_PADDING)
         self.destructive = base.copy(
             color=ft.Colors.ERROR,
             side=ft.BorderSide(color=ft.Colors.ERROR),
@@ -49,8 +54,7 @@ class ButtonStyles:
         )
 
         dialog = base.copy(
-            padding=12,
-            text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+            padding=design.DIALOG_BUTTON_PADDING,
         )
         self.dialog = dialog
         self.dialog_destructive = dialog.copy(

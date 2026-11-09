@@ -4,6 +4,7 @@ import re
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_svg
+from ui import design
 from ui.texts import COMMON, USAGE, ERRORS
 from ui.utils import (
     ButtonStyles,
@@ -39,7 +40,8 @@ class UsageTab(_DialogsMixin):
         self._machine_dropdown = ft.Dropdown(
             label=USAGE["machine_label"],
             value="",
-            border=ft.OutlineInputBorder(border_radius=20),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
             on_select=self._on_machine_selected,
             expand=True,
         )
@@ -51,7 +53,8 @@ class UsageTab(_DialogsMixin):
         self._weight_input = ft.TextField(
             label=USAGE["weight_label"],
             keyboard_type=ft.KeyboardType.NUMBER,
-            border=ft.OutlineInputBorder(border_radius=20),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
         )
         self._machine_image = ft.Image(
             fit=ft.BoxFit.CONTAIN,
@@ -141,7 +144,7 @@ class UsageTab(_DialogsMixin):
                                 USAGE["save"],
                                 icon=ft.Icons.CHECK,
                                 on_click=self._on_log_usage_click,
-                                style=self._styles.default,
+                                style=self._styles.primary,
                                 col={"xs": 12, "sm": 6},
                             ),
                         ],

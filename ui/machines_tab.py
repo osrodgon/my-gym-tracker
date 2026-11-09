@@ -2,6 +2,7 @@ import flet as ft
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
+from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
 from ui.utils import ButtonStyles, _DialogsMixin, is_dark_theme
 
@@ -62,7 +63,7 @@ class MachinesTab(_DialogsMixin):
         self._machine_list.controls = [
             ft.Card(
                 margin=0,
-                shape=ft.RoundedRectangleBorder(radius=20),
+                shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                 content=ft.ListTile(
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
@@ -132,18 +133,20 @@ class MachinesTab(_DialogsMixin):
         name_input = ft.TextField(
             label=MACHINES["new_name_label"] if is_new else MACHINES["new_name"],
             value=machine_name,
-            text_style=ft.TextStyle(size=16),
-            label_style=ft.TextStyle(size=14),
-            border=ft.OutlineInputBorder(border_radius=20),
+            text_style=ft.TextStyle(size=design.FONT_BODY_LARGE),
+            label_style=ft.TextStyle(size=design.FONT_BODY_SMALL),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
             expand=True,
         )
 
         image_dropdown = ft.Dropdown(
             label=MACHINES["image_label"],
             value=initial_image_key or "none",
-            border=ft.OutlineInputBorder(border_radius=20),
-            text_size=16,
-            label_style=ft.TextStyle(size=14),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
+            text_size=design.FONT_BODY_LARGE,
+            label_style=ft.TextStyle(size=design.FONT_BODY_SMALL),
             options=[
                 ft.DropdownOption(key="none", text=MACHINES["no_image"]),
                 *[
