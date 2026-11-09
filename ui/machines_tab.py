@@ -23,7 +23,16 @@ class MachinesTab(_DialogsMixin):
         self._machine_list = ft.ListView(
             expand=True,
             spacing=8,
-            padding=ft.Padding.only(top=4, bottom=4),
+            padding=ft.Padding.only(top=4, bottom=56),
+        )
+
+        # Lives in page.floating_action_button, managed by GymAppView.
+        self.fab = ft.FloatingActionButton(
+            icon=ft.Icons.ADD,
+            tooltip=MACHINES["add_button"],
+            on_click=self._on_add_machine_click,
+            mini=True,
+            shape=ft.CircleBorder(),
         )
 
         self.panel = self._build_panel()
@@ -93,24 +102,7 @@ class MachinesTab(_DialogsMixin):
         return ft.Container(
             expand=True,
             padding=0,
-            content=ft.Column(
-                expand=True,
-                spacing=12,
-                controls=[
-                    self._machine_list,
-                    ft.ResponsiveRow(
-                        controls=[
-                            ft.FilledButton(
-                                MACHINES["add_button"],
-                                icon=ft.Icons.ADD,
-                                on_click=self._on_add_machine_click,
-                                style=self._styles.default,
-                                col={"xs": 12},
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            content=self._machine_list,
         )
 
     def _is_dark_theme(self) -> bool:

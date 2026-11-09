@@ -58,6 +58,11 @@ SQLite persistence. Flet docs: https://flet.dev.
   trusting memory when a name is uncertain.
 - Cards use `RoundedRectangleBorder(radius=20)`; text inputs use
   `OutlineInputBorder(border_radius=20)`; buttons use radius 24 via `ButtonStyles`.
+- FABs are page-level controls (`page.floating_action_button`, shown above
+  `page.navigation_bar`), not part of a tab panel. `GymAppView` assigns the
+  selected tab's `fab` in `_sync_floating_action_button()` (Historial, Máquinas)
+  and clears it on Registrar. Both FABs are mini, and `_summary_list` and
+  `_machine_list` keep 56px of bottom padding (40 + 16 margin).
 - Weights are floats in the DB and are shown with `format_weight()` (`ui/utils.py`),
   which uses the Spanish comma and always keeps a decimal (`80` → `80,0`). The
   weight field accepts only a comma decimal separator; a dot is rejected with a
@@ -105,10 +110,7 @@ finish or discover something instead of creating other status docs.
 2. No top app bar: `page.appbar` is unset, so the app name never appears in-app.
    `page.title` only sets the browser/window title.
 3. `USAGE["heading"]` and `HISTORY["heading"]` exist but nothing renders them.
-4. The history FAB overlaps the last card; `_summary_list` has 4px bottom padding.
-5. FABs are inconsistent: only the history tab has one; the machines tab puts its
-   primary action in a bottom `FilledButton`.
-6. No adaptive-icon config in `pyproject.toml`; Android falls back to
+4. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions
