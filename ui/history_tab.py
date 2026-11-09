@@ -4,6 +4,7 @@ import sqlite3
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
+from ui import design
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES
 from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_weight
 
@@ -87,7 +88,7 @@ class HistoryTab(_DialogsMixin):
             self._summary_list.controls.append(
                 ft.Card(
                     margin=0,
-                    shape=ft.RoundedRectangleBorder(radius=20),
+                    shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                     content=ft.ExpansionTile(
                         title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
                         subtitle=ft.Text(

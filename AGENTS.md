@@ -14,9 +14,10 @@ SQLite persistence. Flet docs: https://flet.dev.
 
 ## Layout
 
-- `main.py` — entry point. Sets theme/dark theme, text styles, `page.title`,
-  window size, appends the `FilePicker` service, mounts `GymAppView` in a
-  `SafeArea`, attaches `page.navigation_bar`, then calls `update_data()`.
+- `main.py` — entry point. Builds the light/dark `Theme` from `ui/design.py`
+  tokens, sets `page.title`, window size, appends the `FilePicker` service,
+  mounts `GymAppView` in a `SafeArea`, attaches `page.navigation_bar`, then calls
+  `update_data()`.
 - `ui/views.py` — `GymAppView(ft.Column)`: builds the 3-tab scaffold, swaps tab
   panels on nav change, and exposes `update_data()` which pushes fresh DB rows
   into all tabs.
@@ -26,6 +27,8 @@ SQLite persistence. Flet docs: https://flet.dev.
 - `ui/machines_tab.py` — "Máquinas": create/rename/delete, SVG preview.
 - `ui/texts.py` — every user-facing string (dicts: `NAVIGATION`, `COMMON`, `USAGE`,
   `HISTORY`, `MACHINES`, `IMPORT`, `EXPORT`, `ERRORS`, `DATE`). Never hardcode UI text.
+- `ui/design.py` — Material 3 tokens: `SCALE`, `dp()`, radii, padding and type
+  sizes. Every shape/size in the app derives from here.
 - `ui/utils.py` — `ButtonStyles`, `_DialogsMixin` (`_show_snackbar`, `_show_error`,
   `_show_message_dialog`), `format_date`, `is_dark_theme`.
 - `database.py` — `GymDatabase`: `get_summary`, `get_machines`, `get_usage_history`,
@@ -60,8 +63,12 @@ SQLite persistence. Flet docs: https://flet.dev.
   or `dir(ft)`. This project pins 1.0.5 and uses the newer APIs (`ft.Icons`,
   `ft.Colors`, `page.show_dialog`, `ft.run`). Read the installed source rather than
   trusting memory when a name is uncertain.
-- Cards use `RoundedRectangleBorder(radius=20)`; text inputs use
-  `OutlineInputBorder(border_radius=20)`; buttons use radius 24 via `ButtonStyles`.
+- Cards use `RoundedRectangleBorder(radius=design.CARD_RADIUS)`; text inputs use
+  `OutlineInputBorder(border_radius=design.FIELD_RADIUS)` with
+  `content_padding=design.FIELD_CONTENT_PADDING`; buttons use the M3 full
+  shape (`ft.StadiumBorder()`) with `design.BUTTON_PADDING` via `ButtonStyles`,
+  and the main action of a screen uses the taller `ButtonStyles.primary`. Never
+  hardcode a radius, padding or font size: import it from `ui/design.py`.
 - FABs are page-level controls (`page.floating_action_button`, shown above
   `page.navigation_bar`), not part of a tab panel. `GymAppView` assigns the
   selected tab's `fab` in `_sync_floating_action_button()` (Historial, Máquinas)
@@ -75,9 +82,9 @@ SQLite persistence. Flet docs: https://flet.dev.
 ## Material baseline
 
 Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
-cards r20, outlined inputs r20, `AlertDialog`s, bottom sheet with drag handle,
+cards r15, outlined inputs r5, `AlertDialog`s r35, bottom sheet with drag handle,
 2s snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text
-themes (18–24px).
+themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
 
 ## Known gaps
 
@@ -113,10 +120,10 @@ finish or discover something instead of creating other status docs.
 1. Snackbars use 2s and the fixed behaviour, so long messages (weight
    validation) are hard to read with large text, and they have no action button
    (no undo after a delete).
-2. Shapes and sizes do not keep Material 3 proportions with the larger text:
-   cards and inputs use radius 20 (M3: 12 and 4), buttons pad 24 on all sides
-   (M3 height: 40), and the type scale mixes 18–24 instead of one 1.25× factor.
-   Scale every M3 token from a single constant.
+2. Creating and editing a machine uses a modal `AlertDialog` with a name field,
+   an image `Dropdown` and a preview. M3 reserves `AlertDialog` for short
+   decisions; a multi-field form should be a full-screen dialog or an in-tab
+   editing view, especially with large text and the keyboard open.
 3. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
    `TextButton`, and the destructive action adds a border instead of using the
    `error` colour alone.

@@ -84,6 +84,7 @@ El botón flotante de **Historial** abre las opciones de Excel y el de **Máquin
 │   ├── history_tab.py    # Pestaña de historial
 │   ├── machines_tab.py   # Pestaña de gestión de máquinas
 │   ├── texts.py          # Textos y cadenas de la UI
+│   ├── design.py         # Tokens de Material 3 (tamaños, formas y tipos)
 │   └── utils.py          # Utilidades compartidas (estilos, formato, diálogos)
 ├── .devcontainer/        # Configuración del contenedor de desarrollo
 └── build/                # Directorio generado para builds y AppImage
