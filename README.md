@@ -1,14 +1,70 @@
 # Mi Gimnasio
 
-Aplicación móvil y web para llevar un seguimiento de los entrenamientos en máquinas de gimnasio. Construida con [Flet](https://flet.dev/) (Python), permite registrar el peso utilizado en cada máquina, consultar el historial de entrenamientos y exportar o importar datos en formato Excel (.xlsx).
+Aplicación móvil y web para llevar el seguimiento de los entrenamientos en máquinas de gimnasio. Está construida con [Flet](https://flet.dev/) (Python) y guarda los datos en SQLite. Permite registrar el peso usado en cada máquina, consultar el historial y exportar o importar los datos en formato Excel (`.xlsx`).
+
+Está pensada para usarse en el móvil, en el propio gimnasio, con controles y textos grandes.
 
 ## Funcionalidades
 
-- **Registro de uso**: selecciona una máquina y registra el peso utilizado. La app muestra automáticamente el último peso registrado como referencia.
-- **Historial**: consulta completa de todos los registros ordenados por fecha. Permite exportar el historial a un archivo Excel e importar datos desde uno.
-- **Gestión de máquinas**: añade, renombra o elimina máquinas. Cada máquina puede tener una imagen SVG asociada que se asigna automáticamente según su nombre.
+- **Registro de uso**: elige una máquina, introduce el peso y guarda. La app muestra el último peso registrado como referencia.
+- **Un registro por máquina y día**: si ya has registrado esa máquina hoy, la app pide confirmación y sobrescribe el peso en lugar de crear un duplicado.
+- **Validación del peso**: solo se admite la coma como separador decimal; el valor debe ser mayor que 0 y no superar los 1000 kg. Los pesos se muestran siempre con coma y un decimal (`80` → `80,0`).
+- **Historial**: registros agrupados por máquina en tarjetas expandibles, ordenados del más reciente al más antiguo, con borrado individual.
+- **Exportar e importar Excel**: desde el menú de opciones del historial. La exportación genera un `.xlsx` y la importación sustituye todos los datos actuales (ver [Datos](#datos)).
+- **Gestión de máquinas**: crea, renombra y elimina máquinas. Al escribir el nombre se sugiere una imagen SVG, que puedes cambiar o quitar desde el desplegable del diálogo.
 - **Tema claro/oscuro**: se adapta automáticamente al tema del sistema.
-- **Interfaz en español**: toda la interfaz de usuario está en español.
+- **Interfaz en español**: todos los textos visibles están en español.
+
+## Requisitos
+
+- Python 3.10 o superior.
+- Flet 1.0.5, declarado en `pyproject.toml` y `requirements.txt`.
+
+> **Nota:** El proyecto está preparado para ejecutarse en un **Dev Container**. Las dependencias se instalan automáticamente al crear el contenedor mediante el `postCreateCommand` de `.devcontainer/devcontainer.json`, así que no hace falta instalarlas a mano en ese entorno.
+
+## Instalación
+
+Fuera del Dev Container:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Ejecución
+
+Desde la raíz del proyecto:
+
+```bash
+python main.py
+```
+
+La aplicación arranca como app web en `http://localhost:8550`.
+
+Para abrirla en una ventana de escritorio durante el desarrollo:
+
+```bash
+flet run main.py
+```
+
+## Uso
+
+La app tiene tres pestañas:
+
+| Pestaña | Para qué sirve |
+|---|---|
+| **Registrar** | Elegir máquina, ver su último registro y guardar el peso de hoy. |
+| **Historial** | Consultar los registros por máquina, borrar uno y abrir el menú de exportar/importar. |
+| **Máquinas** | Crear, editar y eliminar máquinas, con su imagen asociada. |
+
+El botón flotante de **Historial** abre las opciones de Excel y el de **Máquinas** crea una máquina nueva.
+
+## Datos
+
+- Los datos se guardan en `gym.db`, una base SQLite que se crea en el primer arranque. No forma parte del código fuente.
+- Cada uso se guarda con la fecha del día en que se registra; no se pueden registrar entrenamientos pasados.
+- La base impide más de un registro para la misma máquina y día.
+- **La importación de Excel sustituye por completo las máquinas y los registros actuales.** Si el archivo trae varias filas para la misma máquina y fecha, se conserva la última.
+- La exportación escribe columnas `Fecha`, `Máquina` y `Peso (kg)`.
 
 ## Estructura del proyecto
 
@@ -28,98 +84,57 @@ Aplicación móvil y web para llevar un seguimiento de los entrenamientos en má
 │   ├── history_tab.py    # Pestaña de historial
 │   ├── machines_tab.py   # Pestaña de gestión de máquinas
 │   ├── texts.py          # Textos y cadenas de la UI
-│   └── utils.py          # Utilidades compartidas (estilos, etc.)
+│   └── utils.py          # Utilidades compartidas (estilos, formato, diálogos)
 ├── .devcontainer/        # Configuración del contenedor de desarrollo
 └── build/                # Directorio generado para builds y AppImage
 ```
 
-## Requisitos
+## Compilación
 
-- Python 3
-- [Flet](https://flet.dev/) (declarado en `pyproject.toml` y `requirements.txt`)
+El script `build.sh` reúne las tareas habituales:
 
-> **Nota:** El proyecto está preparado para ejecutarse en un **Dev Container**. Las dependencias se instalan automáticamente al crear el contenedor mediante el `postCreateCommand` definido en `.devcontainer/devcontainer.json`, por lo que no es necesario instalarlas manualmente en ese entorno.
+| Acción | Comando | Qué hace |
+|---|---|---|
+| Web | `bash build.sh web` | Ejecuta la app en modo web con `flet run main.py -w`. |
+| APK | `bash build.sh apk` | Genera las APKs de Android con `flet build apk --split-per-abi`. |
+| Linux | `bash build.sh linux` | Genera la build de escritorio con `flet build linux`. |
+| AppImage | `bash build.sh image` | Recompila Linux y genera el AppImage final en `build/`. |
 
-## Instalación
-
-Si no se utiliza el Dev Container, instala las dependencias manualmente:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Ejecución
-
-Desde la raíz del proyecto:
-
-```bash
-python main.py
-```
-
-La aplicación se lanzará como aplicación web en `http://localhost:8550`.
-
-## Script de compilación
-
-El proyecto incluye un script auxiliar para lanzar las tareas más habituales sin tener que recordar todos los comandos de Flet.
-
-```bash
-bash build.sh web
-bash build.sh apk
-bash build.sh linux
-bash build.sh image
-```
-
-También puedes dejarlo ejecutable y usarlo directamente:
+También puedes hacerlo ejecutable y llamarlo directamente:
 
 ```bash
 chmod +x build.sh
 ./build.sh web
-./build.sh apk
-./build.sh linux
-./build.sh image
 ```
 
-### Descripción de cada acción
-
-- `web`: ejecuta la aplicación en modo web con `flet run main.py -w`
-- `apk`: genera las APKs de Android con `flet build apk --split-per-abi`
-- `linux`: genera la build de Linux con `flet build linux`
-- `image`: asegura que la build de Linux esté actualizada y genera el AppImage final
-
-> El comando `image` reutiliza la build Linux previa y crea el paquete final para distribución en Linux.
-
 ## Generación de APK (Android)
-
-Para compilar la APK de Android utilizando Flet:
 
 ```bash
 flet build apk
 ```
 
 > [!TIP]
-> **Nombre de la aplicación en Android:** el nombre visible de la app se controla con el campo `product` de la sección `[tool.flet]` en `pyproject.toml`. También se puede especificar al compilar con el flag `--product`:
+> **Nombre de la aplicación en Android:** el nombre visible se controla con el campo `product` de la sección `[tool.flet]` en `pyproject.toml`. También se puede indicar al compilar:
 >
 > ```bash
 > flet build apk --product "Mi Gimnasio"
 > ```
 >
-> Si tras compilar el nombre sigue siendo incorrecto, prueba a limpiar la caché de build con `flet build apk --clean`.
+> Si el nombre sigue saliendo mal, limpia la caché con `flet build apk --clean`.
 
 ## Generación de AppImage (Linux)
-
-También puedes generar un paquete AppImage para Linux usando el script:
 
 ```bash
 bash build.sh image
 ```
 
-Esto asegura que exista la build Linux y, a continuación, compone el paquete final en la carpeta `build/` con el nombre del proyecto y la versión actual.
+El script recompila la versión Linux y compone el paquete final en `build/`, con el nombre del proyecto, la versión de `pyproject.toml` y la arquitectura:
 
-```bash
-./build.sh image
+```text
+build/<proyecto>-<versión>-<arquitectura>.AppImage
 ```
 
-Si quieres empaquetar directamente la aplicación Linux sin generar la imagen final, puedes ejecutar:
+Si solo quieres la build de Linux, sin el AppImage:
 
 ```bash
 bash build.sh linux
