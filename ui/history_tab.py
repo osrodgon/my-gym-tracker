@@ -26,7 +26,16 @@ class HistoryTab(_DialogsMixin):
         self._summary_list = ft.ListView(
             expand=True,
             spacing=10,
-            padding=ft.Padding.only(top=4, bottom=4),
+            padding=ft.Padding.only(top=4, bottom=56),
+        )
+
+        # Lives in page.floating_action_button, managed by GymAppView.
+        self.fab = ft.FloatingActionButton(
+            icon=ft.Icons.MORE_VERT,
+            tooltip=HISTORY["options_tooltip"],
+            on_click=self._show_history_actions,
+            mini=True,
+            shape=ft.CircleBorder(),
         )
 
         self.panel = self._build_panel()
@@ -127,23 +136,7 @@ class HistoryTab(_DialogsMixin):
         return ft.Container(
             expand=True,
             padding=0,
-            content=ft.Stack(
-                expand=True,
-                controls=[
-                    self._summary_list,
-                    ft.Container(
-                        content=ft.FloatingActionButton(
-                            icon=ft.Icons.MORE_VERT,
-                            tooltip=HISTORY["options_tooltip"],
-                            on_click=self._show_history_actions,
-                            mini=True,
-                            shape=ft.CircleBorder(),
-                        ),
-                        right=10,
-                        bottom=10,
-                    ),
-                ],
-            ),
+            content=self._summary_list,
         )
 
     # ------------------------------------------------------------------

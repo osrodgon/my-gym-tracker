@@ -67,7 +67,13 @@ class GymAppView(ft.Column):
         self.content_container.content = self._sections[index][1]
         if index == 0:
             self._usage_tab.reset()
-        self.update()
+        self._sync_floating_action_button()
+        self.page.update()
+
+    def _sync_floating_action_button(self) -> None:
+        """Show each tab's FAB only while that tab is selected."""
+        fabs = {1: self._history_tab.fab, 2: self._machines_tab.fab}
+        self.page.floating_action_button = fabs.get(self._selected_section)
 
     # ------------------------------------------------------------------
     # Data refresh
