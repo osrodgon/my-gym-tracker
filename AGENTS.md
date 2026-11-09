@@ -38,6 +38,10 @@ SQLite persistence. Flet docs: https://flet.dev.
 
 ## Conventions
 
+- `README.md` is the user-facing documentation and is written in Spanish. Update
+  it in the same change whenever user-visible behaviour, requirements, commands,
+  build flow, data rules or supported platforms change. Don't leave it stale;
+  `AGENTS.md` stays the internal source of truth for pending work and conventions.
 - Mobile-first: vertical touch layout, `ft.ListView` or
   `ft.Column(scroll=ft.ScrollMode.AUTO)`, generous tap targets. The root is already
   wrapped in `ft.SafeArea` in `main.py`.
@@ -109,20 +113,18 @@ finish or discover something instead of creating other status docs.
 1. Snackbars use 2s and the fixed behaviour, so long messages (weight
    validation) are hard to read with large text, and they have no action button
    (no undo after a delete).
-2. The weight field (`width=150`) and machine image (`height=400`) use fixed
-   sizes, so they clip or overflow when the system font scale grows.
-3. Shapes and sizes do not keep Material 3 proportions with the larger text:
+2. Shapes and sizes do not keep Material 3 proportions with the larger text:
    cards and inputs use radius 20 (M3: 12 and 4), buttons pad 24 on all sides
    (M3 height: 40), and the type scale mixes 18–24 instead of one 1.25× factor.
    Scale every M3 token from a single constant.
-4. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
+3. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
    `TextButton`, and the destructive action adds a border instead of using the
    `error` colour alone.
-5. FABs use `CircleBorder`; M3 uses a 16dp rounded square (20dp at the 1.25×
+4. FABs use `CircleBorder`; M3 uses a 16dp rounded square (20dp at the 1.25×
    scale) for small FABs.
-6. `ft.Dropdown` is not the M3 exposed dropdown menu; matching it needs a custom
+5. `ft.Dropdown` is not the M3 exposed dropdown menu; matching it needs a custom
    control (Flet limitation).
-7. No adaptive-icon config in `pyproject.toml`; Android falls back to
+6. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions

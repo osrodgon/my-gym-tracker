@@ -50,7 +50,6 @@ class UsageTab(_DialogsMixin):
 
         self._weight_input = ft.TextField(
             label=USAGE["weight_label"],
-            width=150,
             keyboard_type=ft.KeyboardType.NUMBER,
             border=ft.OutlineInputBorder(border_radius=20),
         )
@@ -124,12 +123,11 @@ class UsageTab(_DialogsMixin):
                                     self._latest_usage_text,
                                     ft.Container(
                                         content=self._weight_input,
-                                        width=150,
-                                        col={"xs": 12},
+                                        col={"xs": 6, "sm": 4},
                                     ),
                                     ft.Container(
                                         content=self._machine_image,
-                                        height=400,
+                                        aspect_ratio=1.4,
                                         alignment=ft.Alignment.CENTER,
                                         col={"xs": 12},
                                     ),
