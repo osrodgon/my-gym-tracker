@@ -106,11 +106,23 @@ finish or discover something instead of creating other status docs.
 
 ### Android design guidelines
 
-1. Snackbars have no action button (no undo after a delete).
-2. No top app bar: `page.appbar` is unset, so the app name never appears in-app.
-   `page.title` only sets the browser/window title.
-3. `USAGE["heading"]` and `HISTORY["heading"]` exist but nothing renders them.
-4. No adaptive-icon config in `pyproject.toml`; Android falls back to
+1. Snackbars use 2s and the fixed behaviour, so long messages (weight
+   validation) are hard to read with large text, and they have no action button
+   (no undo after a delete).
+2. The weight field (`width=150`) and machine image (`height=400`) use fixed
+   sizes, so they clip or overflow when the system font scale grows.
+3. Shapes and sizes do not keep Material 3 proportions with the larger text:
+   cards and inputs use radius 20 (M3: 12 and 4), buttons pad 24 on all sides
+   (M3 height: 40), and the type scale mixes 18–24 instead of one 1.25× factor.
+   Scale every M3 token from a single constant.
+4. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
+   `TextButton`, and the destructive action adds a border instead of using the
+   `error` colour alone.
+5. FABs use `CircleBorder`; M3 uses a 16dp rounded square (20dp at the 1.25×
+   scale) for small FABs.
+6. `ft.Dropdown` is not the M3 exposed dropdown menu; matching it needs a custom
+   control (Flet limitation).
+7. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions
@@ -127,6 +139,8 @@ finish or discover something instead of creating other status docs.
 - `usages` has a unique index on `(machine_id, date)`: never insert a second row
   for the same machine and day. Check with `get_usage_for_date()` and use
   `update_usage_weight()` to overwrite. Imports deduplicate in `replace_data()`.
-- Adding `page.appbar` means reconciling it with the
-  `SafeArea(avoid_intrusions_top=True)` in `main.py`: both handle the status bar,
-  so the view gets extra top space.
+- **No top app bar by design**: don't add `page.appbar`; the app deliberately has
+  no app bar, now or in the near future. `page.title` only sets the
+  browser/window title.
+- **No screen headings by design**: the navigation bar label is enough, so don't
+  render a heading inside each tab or re-add the removed `heading` strings.

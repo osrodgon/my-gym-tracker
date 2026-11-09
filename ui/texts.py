@@ -16,7 +16,6 @@ USAGE = {
     "select_machine": "Selecciona una máquina para ver su último registro.",
     "no_records": "Aún no hay registros para esta máquina.",
     "latest_weight": "Último uso: {weight} kg · {date}",
-    "heading": "Registrar entrenamiento",
     "save": "Guardar uso",
     "duplicate_title": "Registro duplicado",
     "duplicate_message": (
@@ -27,7 +26,6 @@ USAGE = {
 }
 
 HISTORY = {
-    "heading": "Historial por máquina",
     "empty_no_machines": "Todavía no hay máquinas registradas.",
     "empty_no_usages": "Aún no hay usos. Registra uno para ver el historial.",
     "export": "Exportar a Excel",
