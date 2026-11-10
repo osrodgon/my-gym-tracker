@@ -29,8 +29,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   `HISTORY`, `MACHINES`, `IMPORT`, `EXPORT`, `ERRORS`, `DATE`). Never hardcode UI text.
 - `ui/design.py` — Material 3 tokens: `SCALE`, `dp()`, radii, padding and type
   sizes. Every shape/size in the app derives from here.
-- `ui/utils.py` — `ButtonStyles`, `_DialogsMixin` (`_show_snackbar`, `_show_error`,
-  `_show_message_dialog`), `format_date`, `is_dark_theme`.
+- `ui/utils.py` — `ButtonStyles`, `create_dropdown`, `_DialogsMixin`
+  (`_show_snackbar`, `_show_error`, `_show_message_dialog`), `format_date`,
+  `is_dark_theme`.
 - `database.py` — `GymDatabase`: `get_summary`, `get_machines`, `get_usage_history`,
   `get_latest_usage`, `log_use`, `add_machine`, `rename_machine`, `delete_machine`,
   `delete_usage`, `delete_usage_by_machine_weight_date`, `replace_data`.
@@ -63,6 +64,11 @@ SQLite persistence. Flet docs: https://flet.dev.
   or `dir(ft)`. This project pins 1.0.5 and uses the newer APIs (`ft.Icons`,
   `ft.Colors`, `page.show_dialog`, `ft.run`). Read the installed source rather than
   trusting memory when a name is uncertain.
+- Dropdowns are built with `ui.utils.create_dropdown()` (field border, padding
+  and menu height); their `DropdownOption`s take `styles.menu_item` so the
+  expanded rows follow `design.MENU_ITEM_PADDING`. Type sizes stay at the call
+  site (`text_size`, `label_style`) so a dropdown never sets its own font size.
+  The menu panel's shape comes from `Theme.dropdown_theme` in `main.py`.
 - Cards use `RoundedRectangleBorder(radius=design.CARD_RADIUS)`; text inputs use
   `OutlineInputBorder(border_radius=design.FIELD_RADIUS)` with
   `content_padding=design.FIELD_CONTENT_PADDING`; buttons use the M3 full
@@ -82,9 +88,10 @@ SQLite persistence. Flet docs: https://flet.dev.
 ## Material baseline
 
 Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
-cards r15, outlined inputs r5, `AlertDialog`s r35, bottom sheet with drag handle,
-2s snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text
-themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
+cards r15, outlined inputs r5, dropdown menus r5 with ~60dp item rows,
+`AlertDialog`s r35, bottom sheet with drag handle, 2s snackbars,
+`color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text themes
+(17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
 
 ## Known gaps
 
@@ -129,9 +136,7 @@ finish or discover something instead of creating other status docs.
    `error` colour alone.
 4. FABs use `CircleBorder`; M3 uses a 16dp rounded square (20dp at the 1.25×
    scale) for small FABs.
-5. `ft.Dropdown` is not the M3 exposed dropdown menu; matching it needs a custom
-   control (Flet limitation).
-6. No adaptive-icon config in `pyproject.toml`; Android falls back to
+5. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions

@@ -20,6 +20,7 @@ def dp(value: int | float) -> float:
 # Shapes
 CARD_RADIUS = dp(12)
 FIELD_RADIUS = dp(4)
+MENU_RADIUS = dp(4)
 DIALOG_RADIUS = dp(28)
 SNACKBAR_RADIUS = dp(4)
 
@@ -38,6 +39,12 @@ DIALOG_BUTTON_PADDING = ft.Padding.symmetric(
 )
 DIALOG_ACTIONS_PADDING = dp(24)
 BUTTON_ICON_SIZE = dp(24)
+MENU_PADDING = ft.Padding.symmetric(vertical=dp(8))
+MENU_ITEM_PADDING = ft.Padding.symmetric(
+    horizontal=dp(12), vertical=dp(14)
+)
+# Six rows at the scaled item height; Flutter's 300 default would clip at 1.25x.
+MENU_MAX_HEIGHT = dp(300)
 
 # Type scale
 FONT_BODY_LARGE = dp(16)

@@ -30,6 +30,12 @@ def _build_theme(color: str) -> ft.Theme:
         list_tile_theme=ft.ListTileTheme(
             shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
         ),
+        dropdown_theme=ft.DropdownTheme(
+            menu_style=ft.MenuStyle(
+                shape=ft.RoundedRectangleBorder(radius=design.MENU_RADIUS),
+                padding=design.MENU_PADDING,
+            ),
+        ),
         dialog_theme=ft.DialogTheme(
             shape=ft.RoundedRectangleBorder(radius=design.DIALOG_RADIUS),
             title_text_style=ft.TextStyle(
