@@ -62,26 +62,12 @@ class ButtonStyles:
             padding=design.MENU_ITEM_PADDING,
             text_style=ft.TextStyle(size=design.FONT_LABEL_LARGE),
         )
-        self.destructive = base.copy(
-            color=ft.Colors.ERROR,
-            side=ft.BorderSide(color=ft.Colors.ERROR),
-        )
-        self.destructive_filled = base.copy(
-            bgcolor=ft.Colors.ERROR,
-            color=ft.Colors.ON_ERROR,
-        )
-
         dialog = base.copy(
             padding=design.DIALOG_BUTTON_PADDING,
         )
         self.dialog = dialog
         self.dialog_destructive = dialog.copy(
             color=ft.Colors.ERROR,
-            side=ft.BorderSide(color=ft.Colors.ERROR),
-        )
-        self.dialog_destructive_filled = dialog.copy(
-            bgcolor=ft.Colors.ERROR,
-            color=ft.Colors.ON_ERROR,
         )
 
 
@@ -111,6 +97,7 @@ class _DialogsMixin:
                         style=self._styles.dialog,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )
 

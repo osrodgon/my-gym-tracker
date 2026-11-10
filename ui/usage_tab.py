@@ -295,12 +295,12 @@ class UsageTab(_DialogsMixin):
                     )
                 ),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         USAGE["overwrite"],
                         on_click=_confirm_overwrite,
                         style=self._styles.dialog_destructive,

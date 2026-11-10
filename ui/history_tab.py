@@ -204,12 +204,12 @@ class HistoryTab(_DialogsMixin):
                 title=ft.Text(MACHINES["confirm_title"]),
                 content=ft.Text(HISTORY["delete_record"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         MACHINES["delete"],
                         on_click=_confirm_delete,
                         style=self._styles.dialog_destructive,
@@ -238,17 +238,18 @@ class HistoryTab(_DialogsMixin):
                 title=ft.Text(IMPORT["confirm_title"]),
                 content=ft.Text(IMPORT["confirm_message"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.FilledButton(
+                    ft.TextButton(
                         IMPORT["continue"],
                         on_click=self._on_confirm_import_history_click,
-                        style=self._styles.dialog_destructive_filled,
+                        style=self._styles.dialog_destructive,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )
 
