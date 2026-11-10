@@ -339,16 +339,17 @@ class MachinesTab(_DialogsMixin):
                 title=ft.Text(MACHINES["confirm_title"]),
                 content=ft.Text(MACHINES["confirm_message"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         MACHINES["delete"],
                         on_click=_confirm_delete,
                         style=self._styles.dialog_destructive,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )

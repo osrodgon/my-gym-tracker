@@ -61,10 +61,11 @@ SQLite persistence. Flet docs: https://flet.dev.
   `Column` where the image preview expands to fill the leftover height, so the
   two bottom actions (equal width, both `styles.primary`) stay anchored at the
   bottom.
-- Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.OutlinedButton` with
-  `styles.dialog` / `styles.dialog_destructive`, `actions_alignment=ft.MainAxisAlignment.END`.
-  The bottom sheet in `history_tab.py` uses `show_drag_handle=True`; `AlertDialog`
-  does not support it.
+- Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.TextButton` with
+  `styles.dialog` / `styles.dialog_destructive` (error colour, no border or
+  fill), `actions_alignment=ft.MainAxisAlignment.END`. The bottom sheet in
+  `history_tab.py` uses `show_drag_handle=True`; `AlertDialog` does not support
+  it.
 - Messages: `_show_snackbar` (4s, floating, close icon, horizontal dismiss) for
   transient app-level notices; field errors go in `TextField.error` /
   `Dropdown.error_text` and are cleared on change. `_show_error` (modal dialog)
@@ -134,12 +135,6 @@ finish or discover something instead of creating other status docs.
 11. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
 12. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
 13. `GymDatabase.delete_usage(id)` is never called.
-
-### Android design guidelines
-
-1. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
-   `TextButton`, and the destructive action adds a border instead of using the
-   `error` colour alone.
 
 ## Cautions
 
