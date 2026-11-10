@@ -9,6 +9,7 @@ from ui.texts import COMMON, USAGE, ERRORS
 from ui.utils import (
     ButtonStyles,
     _DialogsMixin,
+    create_dropdown,
     format_date,
     format_weight,
     is_dark_theme,
@@ -37,11 +38,9 @@ class UsageTab(_DialogsMixin):
         self._machine_image_keys: dict[str, str | None] = {}
         self._machine_names: dict[str, str] = {}
 
-        self._machine_dropdown = ft.Dropdown(
+        self._machine_dropdown = create_dropdown(
             label=USAGE["machine_label"],
             value="",
-            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
-            content_padding=design.FIELD_CONTENT_PADDING,
             on_select=self._on_machine_selected,
             expand=True,
         )
@@ -83,7 +82,11 @@ class UsageTab(_DialogsMixin):
             for machine_id, name, _ in machines
         }
         self._machine_dropdown.options = [
-            ft.DropdownOption(text=name, key=str(machine_id))
+            ft.DropdownOption(
+                text=name,
+                key=str(machine_id),
+                style=self._styles.menu_item,
+            )
             for machine_id, name, _ in machines
         ]
 

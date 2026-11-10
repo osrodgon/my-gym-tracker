@@ -4,7 +4,12 @@ import sqlite3
 from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
 from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
-from ui.utils import ButtonStyles, _DialogsMixin, is_dark_theme
+from ui.utils import (
+    ButtonStyles,
+    _DialogsMixin,
+    create_dropdown,
+    is_dark_theme,
+)
 
 
 class MachinesTab(_DialogsMixin):
@@ -140,19 +145,22 @@ class MachinesTab(_DialogsMixin):
             expand=True,
         )
 
-        image_dropdown = ft.Dropdown(
+        image_dropdown = create_dropdown(
             label=MACHINES["image_label"],
             value=initial_image_key or "none",
-            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
-            content_padding=design.FIELD_CONTENT_PADDING,
             text_size=design.FONT_BODY_LARGE,
             label_style=ft.TextStyle(size=design.FONT_BODY_SMALL),
             options=[
-                ft.DropdownOption(key="none", text=MACHINES["no_image"]),
+                ft.DropdownOption(
+                    key="none",
+                    text=MACHINES["no_image"],
+                    style=self._styles.menu_item,
+                ),
                 *[
                     ft.DropdownOption(
                         key=key,
                         text=key.replace("-", " ").title(),
+                        style=self._styles.menu_item,
                     )
                     for key in MACHINE_IMAGES
                 ],

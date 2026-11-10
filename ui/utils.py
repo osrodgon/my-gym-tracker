@@ -30,6 +30,20 @@ def is_dark_theme(page: ft.Page) -> bool:
     )
 
 
+def create_dropdown(**kwargs) -> ft.Dropdown:
+    """Create an exposed dropdown with the app's shared Material 3 styling.
+
+    Field border, content padding and menu height only; text sizes stay at each
+    call site so a dropdown never introduces a font size of its own.
+    """
+    return ft.Dropdown(
+        border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+        content_padding=design.FIELD_CONTENT_PADDING,
+        menu_height=design.MENU_MAX_HEIGHT,
+        **kwargs,
+    )
+
+
 class ButtonStyles:
     """All shared button style variants for the app, built once."""
 
@@ -44,6 +58,10 @@ class ButtonStyles:
         )
         self.default = base
         self.primary = base.copy(padding=design.PRIMARY_BUTTON_PADDING)
+        self.menu_item = ft.ButtonStyle(
+            padding=design.MENU_ITEM_PADDING,
+            text_style=ft.TextStyle(size=design.FONT_LABEL_LARGE),
+        )
         self.destructive = base.copy(
             color=ft.Colors.ERROR,
             side=ft.BorderSide(color=ft.Colors.ERROR),
