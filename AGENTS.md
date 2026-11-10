@@ -78,7 +78,9 @@ SQLite persistence. Flet docs: https://flet.dev.
 - FABs are page-level controls (`page.floating_action_button`, shown above
   `page.navigation_bar`), not part of a tab panel. `GymAppView` assigns the
   selected tab's `fab` in `_sync_floating_action_button()` (Historial, Máquinas)
-  and clears it on Registrar. Both FABs are mini, and `_summary_list` and
+  and clears it on Registrar. Both FABs are mini, use
+  `RoundedRectangleBorder(radius=design.FAB_RADIUS)` (M3 small-FAB 12dp corner,
+  15px at this scale) rather than a circle, and `_summary_list` and
   `_machine_list` keep 56px of bottom padding (40 + 16 margin).
 - Weights are floats in the DB and are shown with `format_weight()` (`ui/utils.py`),
   which uses the Spanish comma and always keeps a decimal (`80` → `80,0`). The
@@ -89,9 +91,9 @@ SQLite persistence. Flet docs: https://flet.dev.
 
 Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
 cards r15, outlined inputs r5, dropdown menus r5 with ~60dp item rows,
-`AlertDialog`s r35, bottom sheet with drag handle, 2s snackbars,
-`color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text themes
-(17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
+rounded-square FABs r15, `AlertDialog`s r35, bottom sheet with drag handle,
+2s snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text
+themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
 
 ## Known gaps
 
@@ -134,9 +136,7 @@ finish or discover something instead of creating other status docs.
 3. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
    `TextButton`, and the destructive action adds a border instead of using the
    `error` colour alone.
-4. FABs use `CircleBorder`; M3 uses a 16dp rounded square (20dp at the 1.25×
-   scale) for small FABs.
-5. No adaptive-icon config in `pyproject.toml`; Android falls back to
+4. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions
