@@ -59,8 +59,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   `on_edit_mode_changed` so `GymAppView` hides the FAB, and `reset()` restores
   the list (the view calls it on every nav change). The form is a non-scrolling
   `Column` where the image preview expands to fill the leftover height, so the
-  two bottom actions (equal width, both `styles.primary`) stay anchored at the
-  bottom.
+  two bottom actions stay anchored at the bottom: a `ResponsiveRow` with
+  `col={"xs": 12, "sm": 6}`, both `styles.primary` so they match in size, full
+  width and stacked on xs, side by side from `sm`.
 - Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.TextButton` with
   `styles.dialog` / `styles.dialog_destructive` (error colour, no border or
   fill), `actions_alignment=ft.MainAxisAlignment.END`. The bottom sheet in
@@ -85,14 +86,18 @@ SQLite persistence. Flet docs: https://flet.dev.
   `content_padding=design.FIELD_CONTENT_PADDING`; buttons use the M3 full
   shape (`ft.StadiumBorder()`) with `design.BUTTON_PADDING` via `ButtonStyles`,
   and the main action of a screen uses the taller `ButtonStyles.primary`. Never
-  hardcode a radius, padding or font size: import it from `ui/design.py`.
+  hardcode a radius, padding or font size: import it from `ui/design.py`. Text
+  fields and dropdowns leave `label_style` unset: the inline label inherits
+  `titleMedium` (20px) like the rest of the app, and a smaller `label_style`
+  makes that field look out of place.
 - FABs are page-level controls (`page.floating_action_button`, shown above
   `page.navigation_bar`), not part of a tab panel. `GymAppView` assigns the
   selected tab's `fab` in `_sync_floating_action_button()` (Historial, Máquinas)
-  and clears it on Registrar. Both FABs are mini, use
-  `RoundedRectangleBorder(radius=design.FAB_RADIUS)` (M3 small-FAB 12dp corner,
-  15px at this scale) rather than a circle, and `_summary_list` and
-  `_machine_list` keep 56px of bottom padding (40 + 16 margin).
+  and clears it on Registrar. Both FABs are regular and use
+  `RoundedRectangleBorder(radius=design.FAB_RADIUS)` (M3's 16dp corner for a
+  56dp FAB; the token is not scaled because Flet fixes the FAB box at 56dp)
+  rather than a circle, and `_summary_list` and `_machine_list` keep 72px of
+  bottom padding (56 + 16 margin).
 - Weights are floats in the DB and are shown with `format_weight()` (`ui/utils.py`),
   which uses the Spanish comma and always keeps a decimal (`80` → `80,0`). The
   weight field accepts only a comma decimal separator; a dot is rejected with an
@@ -102,7 +107,7 @@ SQLite persistence. Flet docs: https://flet.dev.
 
 Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
 cards r15, outlined inputs r5, dropdown menus r5 with ~60dp item rows,
-rounded-square FABs r15, `AlertDialog`s r35, bottom sheet with drag handle,
+rounded-square FABs r16, `AlertDialog`s r35, bottom sheet with drag handle,
 4s floating snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit
 light/dark text themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in
 `ui/design.py`.
@@ -126,8 +131,8 @@ finish or discover something instead of creating other status docs.
    by `save_file`, so a cancel looks like a success.
 7. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-8. Brightness changes repaint only the usage-tab preview; an open machine dialog
-   keeps stale colours.
+8. Brightness changes repaint only the usage-tab preview; an open machine form
+   keeps stale colours in its SVG preview and row icons until the next render.
 9. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
    silently falls back to `assets/icon.png`.
 10. The xlsx headers (`Fecha`, `Máquina`, `Peso (kg)`) are hardcoded in
@@ -135,6 +140,19 @@ finish or discover something instead of creating other status docs.
 11. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
 12. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
 13. `GymDatabase.delete_usage(id)` is never called.
+
+### Design (Android/M3)
+
+1. **No back handling for the in-tab machine form.** The create/rename form is
+   tab content, not a route, and neither `page.on_view_pop` nor
+   `on_route_change` is wired, so the Android back gesture leaves the app
+   instead of returning to the list. Dialogs and the bottom sheet are routes and
+   pop correctly.
+2. **The machine form does not scroll.** It is a non-scrolling `Column` where
+   the image preview absorbs the leftover height. With the keyboard open and a
+   large system font the fixed blocks (title, name field, dropdown, actions)
+   could exceed the viewport and be pushed out of view. Fallback: make the field
+   block scrollable and keep only the actions row pinned.
 
 ## Cautions
 

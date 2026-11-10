@@ -20,7 +20,8 @@ def dp(value: int | float) -> float:
 # Shapes
 CARD_RADIUS = dp(12)
 FIELD_RADIUS = dp(4)
-FAB_RADIUS = dp(12)
+FAB_RADIUS = 16
+"""M3 corner for the 56dp FAB. Not scaled: the Flet FAB box is fixed at 56dp."""
 MENU_RADIUS = dp(4)
 DIALOG_RADIUS = dp(28)
 SNACKBAR_RADIUS = dp(4)

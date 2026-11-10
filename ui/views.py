@@ -38,7 +38,7 @@ class GymAppView(ft.Column):
 
     def _build_navigation(self) -> None:
         self._sections = [
-            (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.FITNESS_CENTER),
+            (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.MONITOR_HEART),
             (NAVIGATION["history"],  self._history_tab.panel,  ft.Icons.HISTORY),
             (NAVIGATION["machines"], self._machines_tab.panel, ft.Icons.FORMAT_LIST_BULLETED),
         ]

@@ -27,7 +27,7 @@ class HistoryTab(_DialogsMixin):
         self._summary_list = ft.ListView(
             expand=True,
             spacing=10,
-            padding=ft.Padding.only(top=4, bottom=56),
+            padding=ft.Padding.only(top=4, bottom=72),
         )
 
         # Lives in page.floating_action_button, managed by GymAppView.
@@ -35,7 +35,6 @@ class HistoryTab(_DialogsMixin):
             icon=ft.Icons.MORE_VERT,
             tooltip=HISTORY["options_tooltip"],
             on_click=self._show_history_actions,
-            mini=True,
             shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
@@ -201,7 +200,7 @@ class HistoryTab(_DialogsMixin):
         self._page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text(MACHINES["confirm_title"]),
+                title=ft.Text(HISTORY["delete_title"]),
                 content=ft.Text(HISTORY["delete_record"]),
                 actions=[
                     ft.TextButton(

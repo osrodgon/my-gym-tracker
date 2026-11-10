@@ -34,6 +34,7 @@ HISTORY = {
     "latest": "Último: {weight} kg · {date}",
     "weight": "{weight} kg",
     "delete": "Eliminar registro",
+    "delete_title": "Eliminar registro",
     "delete_record": "¿Estás seguro de eliminar este registro?",
 }
 
@@ -45,7 +46,7 @@ MACHINES = {
     "new_name": "Nombre",
     "rename": "Guardar cambios",
     "delete": "Eliminar",
-    "confirm_title": "Confirmar eliminación",
+    "delete_title": "Eliminar máquina",
     "confirm_message": "Se eliminarán también sus registros. ¿Continuar?",
     "add_button": "Añadir máquina",
     "empty_list": "Aún no hay máquinas. Añade una para empezar.",
@@ -56,7 +57,7 @@ MACHINES = {
 }
 
 IMPORT = {
-    "confirm_title": "Confirmar importación",
+    "confirm_title": "Importar datos",
     "confirm_message": (
         "La importación reemplazará todas las máquinas "
         "y registros actuales."
