@@ -187,12 +187,12 @@ class MachinesTab(_DialogsMixin):
         image_preview = ft.Image(
             src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
             fit=ft.BoxFit.CONTAIN,
-            visible=initial_image_key is not None,
             expand=True,
         )
         image_preview_container = ft.Container(
-            expand=True,
+            aspect_ratio=1.4,
             alignment=ft.Alignment.CENTER,
+            visible=initial_image_key is not None,
             content=image_preview,
         )
 
@@ -206,8 +206,8 @@ class MachinesTab(_DialogsMixin):
                 selected_key if has_image else None,
                 dark=self._is_dark_theme(),
             )
-            image_preview.visible = has_image
-            image_preview.update()
+            image_preview_container.visible = has_image
+            image_preview_container.update()
 
         def _handle_name_change(e) -> None:
             nonlocal automatic_image_key
@@ -259,8 +259,9 @@ class MachinesTab(_DialogsMixin):
         heading = (
             MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
         )
-        form = ft.Column(
+        fields = ft.Column(
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             spacing=16,
             controls=[
@@ -272,6 +273,13 @@ class MachinesTab(_DialogsMixin):
                 name_input,
                 ft.Row(controls=[image_dropdown]),
                 image_preview_container,
+            ],
+        )
+        form = ft.Column(
+            expand=True,
+            spacing=16,
+            controls=[
+                fields,
                 ft.ResponsiveRow(
                     run_spacing=8,
                     controls=[
