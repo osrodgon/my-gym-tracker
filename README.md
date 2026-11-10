@@ -11,7 +11,7 @@ Está pensada para usarse en el móvil, en el propio gimnasio, con controles y t
 - **Validación del peso**: solo se admite la coma como separador decimal; el valor debe ser mayor que 0 y no superar los 1000 kg. Los pesos se muestran siempre con coma y un decimal (`80` → `80,0`).
 - **Historial**: registros agrupados por máquina en tarjetas expandibles, ordenados del más reciente al más antiguo, con borrado individual.
 - **Exportar e importar Excel**: desde el menú de opciones del historial. La exportación genera un `.xlsx` y la importación sustituye todos los datos actuales (ver [Datos](#datos)).
-- **Gestión de máquinas**: crea, renombra y elimina máquinas. Al escribir el nombre se sugiere una imagen SVG, que puedes cambiar o quitar desde el desplegable del diálogo.
+- **Gestión de máquinas**: crea, renombra y elimina máquinas. Al escribir el nombre se sugiere una imagen SVG, que puedes cambiar o quitar desde el desplegable del formulario.
 - **Tema claro/oscuro**: se adapta automáticamente al tema del sistema.
 - **Interfaz en español**: todos los textos visibles están en español.
 
