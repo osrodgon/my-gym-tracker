@@ -61,7 +61,10 @@ SQLite persistence. Flet docs: https://flet.dev.
   `Column` where the image preview expands to fill the leftover height, so the
   two bottom actions stay anchored at the bottom: a `ResponsiveRow` with
   `col={"xs": 12, "sm": 6}`, both `styles.primary` so they match in size, full
-  width and stacked on xs, side by side from `sm`.
+  width and stacked on xs, side by side from `sm`. Android back closes the form
+  instead of leaving the app: `GymAppView` sets `page.views[0].can_pop` to
+  `not editing` and resolves the gesture in `on_confirm_pop` (wired in
+  `main.py`), so on the list the back gesture keeps its native behaviour.
 - Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.TextButton` with
   `styles.dialog` / `styles.dialog_destructive` (error colour, no border or
   fill), `actions_alignment=ft.MainAxisAlignment.END`. The bottom sheet in
@@ -143,12 +146,7 @@ finish or discover something instead of creating other status docs.
 
 ### Design (Android/M3)
 
-1. **No back handling for the in-tab machine form.** The create/rename form is
-   tab content, not a route, and neither `page.on_view_pop` nor
-   `on_route_change` is wired, so the Android back gesture leaves the app
-   instead of returning to the list. Dialogs and the bottom sheet are routes and
-   pop correctly.
-2. **The machine form does not scroll.** It is a non-scrolling `Column` where
+1. **The machine form does not scroll.** It is a non-scrolling `Column` where
    the image preview absorbs the leftover height. With the keyboard open and a
    large system font the fixed blocks (title, name field, dropdown, actions)
    could exceed the viewport and be pushed out of view. Fallback: make the field
