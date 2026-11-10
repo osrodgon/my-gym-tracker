@@ -37,7 +37,7 @@ class MachinesTab(_DialogsMixin):
         self._machine_list = ft.ListView(
             expand=True,
             spacing=8,
-            padding=ft.Padding.only(top=4, bottom=56),
+            padding=ft.Padding.only(top=4, bottom=72),
         )
         self._list_view = ft.Container(expand=True, content=self._machine_list)
 
@@ -46,7 +46,6 @@ class MachinesTab(_DialogsMixin):
             icon=ft.Icons.ADD,
             tooltip=MACHINES["add_button"],
             on_click=self._on_add_machine_click,
-            mini=True,
             shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
@@ -81,7 +80,7 @@ class MachinesTab(_DialogsMixin):
                 content=ft.ListTile(
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
-                    leading=ft.Icon(ft.Icons.FITNESS_CENTER, color=ft.Colors.PRIMARY),
+                    leading=ft.Icon(ft.Icons.HANDYMAN, color=ft.Colors.PRIMARY),
                     title=ft.Text(machine_name),
                     trailing=ft.Row(
                         tight=True,
@@ -153,7 +152,6 @@ class MachinesTab(_DialogsMixin):
             label=MACHINES["new_name_label"] if is_new else MACHINES["new_name"],
             value=machine_name,
             text_style=ft.TextStyle(size=design.FONT_BODY_LARGE),
-            label_style=ft.TextStyle(size=design.FONT_BODY_SMALL),
             border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
             content_padding=design.FIELD_CONTENT_PADDING,
         )
@@ -162,7 +160,6 @@ class MachinesTab(_DialogsMixin):
             label=MACHINES["image_label"],
             value=initial_image_key or "none",
             text_size=design.FONT_BODY_LARGE,
-            label_style=ft.TextStyle(size=design.FONT_BODY_SMALL),
             options=[
                 ft.DropdownOption(
                     key="none",
@@ -280,20 +277,20 @@ class MachinesTab(_DialogsMixin):
                 name_input,
                 ft.Row(controls=[image_dropdown]),
                 image_preview_container,
-                ft.Row(
-                    spacing=8,
+                ft.ResponsiveRow(
+                    run_spacing=8,
                     controls=[
                         ft.OutlinedButton(
                             COMMON["cancel"],
                             on_click=lambda e: self._close_machine_form(),
                             style=self._styles.primary,
-                            expand=True,
+                            col={"xs": 12, "sm": 6},
                         ),
                         ft.FilledButton(
                             MACHINES["create"] if is_new else MACHINES["rename"],
                             on_click=_save_machine,
                             style=self._styles.primary,
-                            expand=True,
+                            col={"xs": 12, "sm": 6},
                         ),
                     ],
                 ),
@@ -336,7 +333,7 @@ class MachinesTab(_DialogsMixin):
         self._page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text(MACHINES["confirm_title"]),
+                title=ft.Text(MACHINES["delete_title"]),
                 content=ft.Text(MACHINES["confirm_message"]),
                 actions=[
                     ft.TextButton(
