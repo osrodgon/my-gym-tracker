@@ -38,7 +38,7 @@ class MachinesTab(_DialogsMixin):
             tooltip=MACHINES["add_button"],
             on_click=self._on_add_machine_click,
             mini=True,
-            shape=ft.CircleBorder(),
+            shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
         self.panel = self._build_panel()

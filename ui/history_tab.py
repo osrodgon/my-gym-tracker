@@ -36,7 +36,7 @@ class HistoryTab(_DialogsMixin):
             tooltip=HISTORY["options_tooltip"],
             on_click=self._show_history_actions,
             mini=True,
-            shape=ft.CircleBorder(),
+            shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
         self.panel = self._build_panel()
