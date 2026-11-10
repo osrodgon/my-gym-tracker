@@ -4,6 +4,7 @@ import sqlite3
 
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
+from ui import design
 from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES
 from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_weight
 
@@ -26,7 +27,15 @@ class HistoryTab(_DialogsMixin):
         self._summary_list = ft.ListView(
             expand=True,
             spacing=10,
-            padding=ft.Padding.only(top=4, bottom=4),
+            padding=ft.Padding.only(top=4, bottom=72),
+        )
+
+        # Lives in page.floating_action_button, managed by GymAppView.
+        self.fab = ft.FloatingActionButton(
+            icon=ft.Icons.MORE_VERT,
+            tooltip=HISTORY["options_tooltip"],
+            on_click=self._show_history_actions,
+            shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
         self.panel = self._build_panel()
@@ -78,7 +87,7 @@ class HistoryTab(_DialogsMixin):
             self._summary_list.controls.append(
                 ft.Card(
                     margin=0,
-                    shape=ft.RoundedRectangleBorder(radius=20),
+                    shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                     content=ft.ExpansionTile(
                         title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
                         subtitle=ft.Text(
@@ -127,23 +136,7 @@ class HistoryTab(_DialogsMixin):
         return ft.Container(
             expand=True,
             padding=0,
-            content=ft.Stack(
-                expand=True,
-                controls=[
-                    self._summary_list,
-                    ft.Container(
-                        content=ft.FloatingActionButton(
-                            icon=ft.Icons.MORE_VERT,
-                            tooltip=HISTORY["options_tooltip"],
-                            on_click=self._show_history_actions,
-                            mini=True,
-                            shape=ft.CircleBorder(),
-                        ),
-                        right=10,
-                        bottom=10,
-                    ),
-                ],
-            ),
+            content=self._summary_list,
         )
 
     # ------------------------------------------------------------------
@@ -207,15 +200,15 @@ class HistoryTab(_DialogsMixin):
         self._page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text(MACHINES["confirm_title"]),
+                title=ft.Text(HISTORY["delete_title"]),
                 content=ft.Text(HISTORY["delete_record"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         MACHINES["delete"],
                         on_click=_confirm_delete,
                         style=self._styles.dialog_destructive,
@@ -244,17 +237,18 @@ class HistoryTab(_DialogsMixin):
                 title=ft.Text(IMPORT["confirm_title"]),
                 content=ft.Text(IMPORT["confirm_message"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.FilledButton(
+                    ft.TextButton(
                         IMPORT["continue"],
                         on_click=self._on_confirm_import_history_click,
-                        style=self._styles.dialog_destructive_filled,
+                        style=self._styles.dialog_destructive,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )
 

@@ -2,8 +2,14 @@ import flet as ft
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
+from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
-from ui.utils import ButtonStyles, _DialogsMixin, is_dark_theme
+from ui.utils import (
+    ButtonStyles,
+    _DialogsMixin,
+    create_dropdown,
+    is_dark_theme,
+)
 
 
 class MachinesTab(_DialogsMixin):
@@ -15,15 +21,32 @@ class MachinesTab(_DialogsMixin):
       render – call with fresh machine list to redraw.
     """
 
-    def __init__(self, db, styles: ButtonStyles, on_refresh):
+    def __init__(
+        self,
+        db,
+        styles: ButtonStyles,
+        on_refresh,
+        on_edit_mode_changed=None,
+    ):
         self._db = db
         self._styles = styles
         self._on_refresh = on_refresh
+        self._on_edit_mode_changed = on_edit_mode_changed
+        self._form_open = False
 
         self._machine_list = ft.ListView(
             expand=True,
             spacing=8,
-            padding=ft.Padding.only(top=4, bottom=4),
+            padding=ft.Padding.only(top=4, bottom=72),
+        )
+        self._list_view = ft.Container(expand=True, content=self._machine_list)
+
+        # Lives in page.floating_action_button, managed by GymAppView.
+        self.fab = ft.FloatingActionButton(
+            icon=ft.Icons.ADD,
+            tooltip=MACHINES["add_button"],
+            on_click=self._on_add_machine_click,
+            shape=ft.RoundedRectangleBorder(radius=design.FAB_RADIUS),
         )
 
         self.panel = self._build_panel()
@@ -53,11 +76,11 @@ class MachinesTab(_DialogsMixin):
         self._machine_list.controls = [
             ft.Card(
                 margin=0,
-                shape=ft.RoundedRectangleBorder(radius=20),
+                shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                 content=ft.ListTile(
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
-                    leading=ft.Icon(ft.Icons.FITNESS_CENTER, color=ft.Colors.PRIMARY),
+                    leading=ft.Icon(ft.Icons.HANDYMAN, color=ft.Colors.PRIMARY),
                     title=ft.Text(machine_name),
                     trailing=ft.Row(
                         tight=True,
@@ -67,7 +90,7 @@ class MachinesTab(_DialogsMixin):
                                 icon=ft.Icons.EDIT,
                                 tooltip=MACHINES["edit_tooltip"],
                                 on_click=lambda e, mid=machine_id, name=machine_name, key=image_key: (
-                                    self._show_machine_dialog(mid, name, key)
+                                    self._open_machine_form(mid, name, key)
                                 ),
                             ),
                             ft.IconButton(
@@ -93,25 +116,13 @@ class MachinesTab(_DialogsMixin):
         return ft.Container(
             expand=True,
             padding=0,
-            content=ft.Column(
-                expand=True,
-                spacing=12,
-                controls=[
-                    self._machine_list,
-                    ft.ResponsiveRow(
-                        controls=[
-                            ft.FilledButton(
-                                MACHINES["add_button"],
-                                icon=ft.Icons.ADD,
-                                on_click=self._on_add_machine_click,
-                                style=self._styles.default,
-                                col={"xs": 12},
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+            content=self._list_view,
         )
+
+    def reset(self) -> None:
+        """Show the list again, discarding an open machine form."""
+        if self._form_open:
+            self._close_machine_form()
 
     def _is_dark_theme(self) -> bool:
         return is_dark_theme(self._page)
@@ -121,9 +132,9 @@ class MachinesTab(_DialogsMixin):
     # ------------------------------------------------------------------
 
     def _on_add_machine_click(self, e) -> None:
-        self._show_machine_dialog()
+        self._open_machine_form()
 
-    def _show_machine_dialog(
+    def _open_machine_form(
         self,
         machine_id=None,
         machine_name: str = "",
@@ -140,24 +151,26 @@ class MachinesTab(_DialogsMixin):
         name_input = ft.TextField(
             label=MACHINES["new_name_label"] if is_new else MACHINES["new_name"],
             value=machine_name,
-            text_style=ft.TextStyle(size=16),
-            label_style=ft.TextStyle(size=14),
-            border=ft.OutlineInputBorder(border_radius=20),
-            expand=True,
+            text_style=ft.TextStyle(size=design.FONT_BODY_LARGE),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
         )
 
-        image_dropdown = ft.Dropdown(
+        image_dropdown = create_dropdown(
             label=MACHINES["image_label"],
             value=initial_image_key or "none",
-            border=ft.OutlineInputBorder(border_radius=20),
-            text_size=16,
-            label_style=ft.TextStyle(size=14),
+            text_size=design.FONT_BODY_LARGE,
             options=[
-                ft.DropdownOption(key="none", text=MACHINES["no_image"]),
+                ft.DropdownOption(
+                    key="none",
+                    text=MACHINES["no_image"],
+                    style=self._styles.menu_item,
+                ),
                 *[
                     ft.DropdownOption(
                         key=key,
                         text=key.replace("-", " ").title(),
+                        style=self._styles.menu_item,
                     )
                     for key in MACHINE_IMAGES
                 ],
@@ -167,21 +180,15 @@ class MachinesTab(_DialogsMixin):
         )
 
         image_preview = ft.Image(
-        src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
-        width=160,
-        height=120,
-        fit=ft.BoxFit.CONTAIN,
-    )
-        image_preview_container = ft.Container(
-            content=image_preview,
-            width=200,
-            height=140,
-            alignment=ft.Alignment.CENTER,
-        )
-        preview_row = ft.Row(
-            alignment=ft.MainAxisAlignment.CENTER,
-            controls=[image_preview_container],
+            src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
+            fit=ft.BoxFit.CONTAIN,
             visible=initial_image_key is not None,
+            expand=True,
+        )
+        image_preview_container = ft.Container(
+            expand=True,
+            alignment=ft.Alignment.CENTER,
+            content=image_preview,
         )
 
         def _update_image_preview() -> None:
@@ -194,8 +201,8 @@ class MachinesTab(_DialogsMixin):
                 selected_key if has_image else None,
                 dark=self._is_dark_theme(),
             )
-            preview_row.visible = has_image
-            preview_row.update()
+            image_preview.visible = has_image
+            image_preview.update()
 
         def _handle_name_change(e) -> None:
             nonlocal automatic_image_key
@@ -235,45 +242,81 @@ class MachinesTab(_DialogsMixin):
                 name_input.update()
                 return
             except sqlite3.Error as exc:
-                self._page.pop_dialog()
                 error_key = (
                     ERRORS["add_machine"] if is_new else ERRORS["rename_machine"]
                 )
                 self._show_error(error_key.format(error=exc))
                 return
 
-            self._page.pop_dialog()
+            self._close_machine_form()
             self._on_refresh()
 
-        self._page.show_dialog(
-            ft.AlertDialog(
-                modal=True,
-                title=ft.Text(
-                    MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
-                ),
-                content=ft.Column(
-                    tight=True,
-                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        heading = (
+            MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
+        )
+        form = ft.Column(
+            expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+            spacing=16,
+            controls=[
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[
-                        ft.Row(controls=[name_input]),
-                        ft.Row(controls=[image_dropdown]),
-                        preview_row,
+                        ft.Text(
+                            heading,
+                            size=design.FONT_TITLE_LARGE,
+                            weight=ft.FontWeight.W_500,
+                        ),
+                        ft.IconButton(
+                            icon=ft.Icons.CLOSE,
+                            tooltip=COMMON["cancel"],
+                            on_click=lambda e: self._close_machine_form(),
+                        ),
                     ],
                 ),
-                actions=[
-                    ft.OutlinedButton(
-                        COMMON["cancel"],
-                        on_click=lambda e: self._page.pop_dialog(),
-                        style=self._styles.dialog,
-                    ),
-                    ft.FilledButton(
-                        MACHINES["create"] if is_new else MACHINES["rename"],
-                        on_click=_save_machine,
-                        style=self._styles.dialog,
-                    ),
-                ],
-            )
+                name_input,
+                ft.Row(controls=[image_dropdown]),
+                image_preview_container,
+                ft.ResponsiveRow(
+                    run_spacing=8,
+                    controls=[
+                        ft.OutlinedButton(
+                            COMMON["cancel"],
+                            on_click=lambda e: self._close_machine_form(),
+                            style=self._styles.primary,
+                            col={"xs": 12, "sm": 6},
+                        ),
+                        ft.FilledButton(
+                            MACHINES["create"] if is_new else MACHINES["rename"],
+                            on_click=_save_machine,
+                            style=self._styles.primary,
+                            col={"xs": 12, "sm": 6},
+                        ),
+                    ],
+                ),
+            ],
         )
+
+        self.panel.content = ft.Container(
+            expand=True,
+            padding=ft.Padding.only(bottom=design.dp(8)),
+            content=form,
+        )
+        self._form_open = True
+        if self._on_edit_mode_changed is not None:
+            self._on_edit_mode_changed(True)
+        elif self.panel.page is not None:
+            self.panel.update()
+
+    def _close_machine_form(self) -> None:
+        if not self._form_open:
+            return
+        self._form_open = False
+        self.panel.content = self._list_view
+        if self._on_edit_mode_changed is not None:
+            self._on_edit_mode_changed(False)
+        elif self.panel.page is not None:
+            self.panel.update()
 
     def _on_delete_machine_click(self, machine_id: int) -> None:
         def _confirm_delete(e) -> None:
@@ -290,19 +333,20 @@ class MachinesTab(_DialogsMixin):
         self._page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text(MACHINES["confirm_title"]),
+                title=ft.Text(MACHINES["delete_title"]),
                 content=ft.Text(MACHINES["confirm_message"]),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         MACHINES["delete"],
                         on_click=_confirm_delete,
                         style=self._styles.dialog_destructive,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )

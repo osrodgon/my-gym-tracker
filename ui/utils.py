@@ -1,9 +1,10 @@
 import flet as ft
 from datetime import date
 
+from ui import design
 from ui.texts import DATE, ERRORS, COMMON
 
-_SNACKBAR_DURATION_MS = 2000
+_SNACKBAR_DURATION_MS = 4000
 
 
 def format_date(iso_date: str) -> str:
@@ -29,37 +30,44 @@ def is_dark_theme(page: ft.Page) -> bool:
     )
 
 
+def create_dropdown(**kwargs) -> ft.Dropdown:
+    """Create an exposed dropdown with the app's shared Material 3 styling.
+
+    Field border, content padding and menu height only; text sizes stay at each
+    call site so a dropdown never introduces a font size of its own.
+    """
+    return ft.Dropdown(
+        border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+        content_padding=design.FIELD_CONTENT_PADDING,
+        menu_height=design.MENU_MAX_HEIGHT,
+        **kwargs,
+    )
+
+
 class ButtonStyles:
     """All shared button style variants for the app, built once."""
 
     def __init__(self):
         base = ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=24),
-            padding=24,
-            text_style=ft.TextStyle(size=18, weight=ft.FontWeight.W_500),
+            shape=ft.StadiumBorder(),
+            padding=design.BUTTON_PADDING,
+            icon_size=design.BUTTON_ICON_SIZE,
+            text_style=ft.TextStyle(
+                size=design.FONT_LABEL_LARGE, weight=ft.FontWeight.W_500
+            ),
         )
         self.default = base
-        self.destructive = base.copy(
-            color=ft.Colors.ERROR,
-            side=ft.BorderSide(color=ft.Colors.ERROR),
+        self.primary = base.copy(padding=design.PRIMARY_BUTTON_PADDING)
+        self.menu_item = ft.ButtonStyle(
+            padding=design.MENU_ITEM_PADDING,
+            text_style=ft.TextStyle(size=design.FONT_LABEL_LARGE),
         )
-        self.destructive_filled = base.copy(
-            bgcolor=ft.Colors.ERROR,
-            color=ft.Colors.ON_ERROR,
-        )
-
         dialog = base.copy(
-            padding=12,
-            text_style=ft.TextStyle(size=14, weight=ft.FontWeight.W_500),
+            padding=design.DIALOG_BUTTON_PADDING,
         )
         self.dialog = dialog
         self.dialog_destructive = dialog.copy(
             color=ft.Colors.ERROR,
-            side=ft.BorderSide(color=ft.Colors.ERROR),
-        )
-        self.dialog_destructive_filled = dialog.copy(
-            bgcolor=ft.Colors.ERROR,
-            color=ft.Colors.ON_ERROR,
         )
 
 
@@ -89,6 +97,7 @@ class _DialogsMixin:
                         style=self._styles.dialog,
                     ),
                 ],
+                actions_alignment=ft.MainAxisAlignment.END,
             )
         )
 
@@ -97,7 +106,9 @@ class _DialogsMixin:
             ft.SnackBar(
                 ft.Text(message),
                 duration=_SNACKBAR_DURATION_MS,
+                behavior=ft.SnackBarBehavior.FLOATING,
                 dismiss_direction=ft.DismissDirection.HORIZONTAL,
+                show_close_icon=True,
             )
         )
 

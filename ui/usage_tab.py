@@ -4,10 +4,12 @@ import re
 import sqlite3
 
 from machine_images import MACHINE_IMAGES, get_machine_image_svg
+from ui import design
 from ui.texts import COMMON, USAGE, ERRORS
 from ui.utils import (
     ButtonStyles,
     _DialogsMixin,
+    create_dropdown,
     format_date,
     format_weight,
     is_dark_theme,
@@ -36,10 +38,9 @@ class UsageTab(_DialogsMixin):
         self._machine_image_keys: dict[str, str | None] = {}
         self._machine_names: dict[str, str] = {}
 
-        self._machine_dropdown = ft.Dropdown(
+        self._machine_dropdown = create_dropdown(
             label=USAGE["machine_label"],
             value="",
-            border=ft.OutlineInputBorder(border_radius=20),
             on_select=self._on_machine_selected,
             expand=True,
         )
@@ -50,9 +51,11 @@ class UsageTab(_DialogsMixin):
 
         self._weight_input = ft.TextField(
             label=USAGE["weight_label"],
-            width=150,
             keyboard_type=ft.KeyboardType.NUMBER,
-            border=ft.OutlineInputBorder(border_radius=20),
+            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
+            content_padding=design.FIELD_CONTENT_PADDING,
+            error_max_lines=4,
+            on_change=self._clear_weight_error,
         )
         self._machine_image = ft.Image(
             fit=ft.BoxFit.CONTAIN,
@@ -81,14 +84,20 @@ class UsageTab(_DialogsMixin):
             for machine_id, name, _ in machines
         }
         self._machine_dropdown.options = [
-            ft.DropdownOption(text=name, key=str(machine_id))
+            ft.DropdownOption(
+                text=name,
+                key=str(machine_id),
+                style=self._styles.menu_item,
+            )
             for machine_id, name, _ in machines
         ]
 
     def reset(self) -> None:
         self._machine_dropdown.value = ""
+        self._machine_dropdown.error_text = None
         self._latest_usage_text.value = USAGE["select_machine"]
         self._weight_input.value = ""
+        self._weight_input.error = None
         self._machine_image.visible = False
 
         if self._machine_dropdown.page is not None:
@@ -124,12 +133,11 @@ class UsageTab(_DialogsMixin):
                                     self._latest_usage_text,
                                     ft.Container(
                                         content=self._weight_input,
-                                        width=150,
-                                        col={"xs": 12},
+                                        col={"xs": 6, "sm": 4},
                                     ),
                                     ft.Container(
                                         content=self._machine_image,
-                                        height=400,
+                                        aspect_ratio=1.4,
                                         alignment=ft.Alignment.CENTER,
                                         col={"xs": 12},
                                     ),
@@ -143,7 +151,7 @@ class UsageTab(_DialogsMixin):
                                 USAGE["save"],
                                 icon=ft.Icons.CHECK,
                                 on_click=self._on_log_usage_click,
-                                style=self._styles.default,
+                                style=self._styles.primary,
                                 col={"xs": 12, "sm": 6},
                             ),
                         ],
@@ -169,27 +177,39 @@ class UsageTab(_DialogsMixin):
     def _parse_weight(self) -> float | None:
         raw = (self._weight_input.value or "").strip()
         if not raw:
-            self._show_snackbar(ERRORS["enter_weight"])
+            self._set_weight_error(ERRORS["enter_weight"])
             return None
 
         if not _WEIGHT_RE.fullmatch(raw):
-            self._show_snackbar(ERRORS["invalid_weight"])
+            self._set_weight_error(ERRORS["invalid_weight"])
             return None
 
         weight = float(raw.replace(",", "."))
         if not math.isfinite(weight) or weight <= 0 or weight > _MAX_WEIGHT_KG:
-            self._show_snackbar(
+            self._set_weight_error(
                 ERRORS["weight_out_of_range"].format(max=_MAX_WEIGHT_KG)
             )
             return None
 
         return weight
 
+    def _set_weight_error(self, message: str) -> None:
+        self._weight_input.error = message
+        self._weight_input.update()
+
+    def _clear_weight_error(self, e=None) -> None:
+        if self._weight_input.error is not None:
+            self._weight_input.error = None
+            self._weight_input.update()
+
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
 
     def _on_machine_selected(self, e) -> None:
+        if self._machine_dropdown.error_text is not None:
+            self._machine_dropdown.error_text = None
+
         if not self._machine_dropdown.value:
             self._machine_image.visible = False
             self._latest_usage_text.value = USAGE["select_machine"]
@@ -211,7 +231,8 @@ class UsageTab(_DialogsMixin):
 
     def _on_log_usage_click(self, e) -> None:
         if not self._machine_dropdown.value:
-            self._show_snackbar(ERRORS["select_machine"])
+            self._machine_dropdown.error_text = ERRORS["select_machine"]
+            self._machine_dropdown.update()
             return
 
         weight = self._parse_weight()
@@ -223,7 +244,7 @@ class UsageTab(_DialogsMixin):
         try:
             existing = self._db.get_usage_for_date(machine_id)
         except sqlite3.Error as exc:
-            self._show_snackbar(ERRORS["log_usage"].format(error=exc))
+            self._show_error(ERRORS["log_usage"].format(error=exc))
             return
 
         if existing is not None:
@@ -239,7 +260,7 @@ class UsageTab(_DialogsMixin):
         try:
             self._db.log_use(machine_id, weight)
         except sqlite3.Error as exc:
-            self._show_snackbar(ERRORS["log_usage"].format(error=exc))
+            self._show_error(ERRORS["log_usage"].format(error=exc))
             return
 
         self._on_refresh()
@@ -258,7 +279,7 @@ class UsageTab(_DialogsMixin):
             try:
                 self._db.update_usage_weight(usage_id, new_weight)
             except sqlite3.Error as exc:
-                self._show_snackbar(ERRORS["log_usage"].format(error=exc))
+                self._show_error(ERRORS["log_usage"].format(error=exc))
                 return
             self._on_refresh()
 
@@ -274,12 +295,12 @@ class UsageTab(_DialogsMixin):
                     )
                 ),
                 actions=[
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         COMMON["cancel"],
                         on_click=lambda e: self._page.pop_dialog(),
                         style=self._styles.dialog,
                     ),
-                    ft.OutlinedButton(
+                    ft.TextButton(
                         USAGE["overwrite"],
                         on_click=_confirm_overwrite,
                         style=self._styles.dialog_destructive,

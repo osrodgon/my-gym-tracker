@@ -23,7 +23,12 @@ class GymAppView(ft.Column):
         styles = ButtonStyles()
         self._usage_tab = UsageTab(db, styles, self._on_data_changed)
         self._history_tab = HistoryTab(db, self.file_picker, styles, self._on_data_changed)
-        self._machines_tab = MachinesTab(db, styles, self._on_data_changed)
+        self._machines_tab = MachinesTab(
+            db,
+            styles,
+            self._on_data_changed,
+            on_edit_mode_changed=self._on_machines_edit_mode_changed,
+        )
 
         self._build_navigation()
 
@@ -33,7 +38,7 @@ class GymAppView(ft.Column):
 
     def _build_navigation(self) -> None:
         self._sections = [
-            (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.FITNESS_CENTER),
+            (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.MONITOR_HEART),
             (NAVIGATION["history"],  self._history_tab.panel,  ft.Icons.HISTORY),
             (NAVIGATION["machines"], self._machines_tab.panel, ft.Icons.FORMAT_LIST_BULLETED),
         ]
@@ -64,10 +69,26 @@ class GymAppView(ft.Column):
         if index is None or not 0 <= index < len(self._sections):
             return
         self._selected_section = index
+        self._machines_tab.reset()
         self.content_container.content = self._sections[index][1]
         if index == 0:
             self._usage_tab.reset()
-        self.update()
+        self._sync_floating_action_button()
+        self.page.update()
+
+    def _on_machines_edit_mode_changed(self, editing: bool) -> None:
+        """Hide the Máquinas FAB while its in-tab form is open."""
+        if self._selected_section != 2:
+            return
+        self.page.floating_action_button = (
+            None if editing else self._machines_tab.fab
+        )
+        self.page.update()
+
+    def _sync_floating_action_button(self) -> None:
+        """Show each tab's FAB only while that tab is selected."""
+        fabs = {1: self._history_tab.fab, 2: self._machines_tab.fab}
+        self.page.floating_action_button = fabs.get(self._selected_section)
 
     # ------------------------------------------------------------------
     # Data refresh

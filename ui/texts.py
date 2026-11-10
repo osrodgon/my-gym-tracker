@@ -16,7 +16,6 @@ USAGE = {
     "select_machine": "Selecciona una máquina para ver su último registro.",
     "no_records": "Aún no hay registros para esta máquina.",
     "latest_weight": "Último uso: {weight} kg · {date}",
-    "heading": "Registrar entrenamiento",
     "save": "Guardar uso",
     "duplicate_title": "Registro duplicado",
     "duplicate_message": (
@@ -27,7 +26,6 @@ USAGE = {
 }
 
 HISTORY = {
-    "heading": "Historial por máquina",
     "empty_no_machines": "Todavía no hay máquinas registradas.",
     "empty_no_usages": "Aún no hay usos. Registra uno para ver el historial.",
     "export": "Exportar a Excel",
@@ -36,6 +34,7 @@ HISTORY = {
     "latest": "Último: {weight} kg · {date}",
     "weight": "{weight} kg",
     "delete": "Eliminar registro",
+    "delete_title": "Eliminar registro",
     "delete_record": "¿Estás seguro de eliminar este registro?",
 }
 
@@ -47,7 +46,7 @@ MACHINES = {
     "new_name": "Nombre",
     "rename": "Guardar cambios",
     "delete": "Eliminar",
-    "confirm_title": "Confirmar eliminación",
+    "delete_title": "Eliminar máquina",
     "confirm_message": "Se eliminarán también sus registros. ¿Continuar?",
     "add_button": "Añadir máquina",
     "empty_list": "Aún no hay máquinas. Añade una para empezar.",
@@ -58,7 +57,7 @@ MACHINES = {
 }
 
 IMPORT = {
-    "confirm_title": "Confirmar importación",
+    "confirm_title": "Importar datos",
     "confirm_message": (
         "La importación reemplazará todas las máquinas "
         "y registros actuales."

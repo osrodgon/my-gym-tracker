@@ -1,6 +1,6 @@
 [project]
 name = "gymtracker"
-version = "2.0.0"
+version = "2.1.0"
 description = "Una aplicación modular para hacer seguimiento de tus entrenamientos."
 requires-python = ">=3.10"
 dependencies = [
@@ -10,3 +10,7 @@ dependencies = [
 [tool.flet]
 org = "com.osukaru"
 product = "Mi Gimnasio"
+
+[tool.flet.android]
+# Adaptive-icon background layer; the foreground is generated from assets/icon.png.
+adaptive_icon_background = "#4fabf7"
