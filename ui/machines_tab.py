@@ -124,6 +124,11 @@ class MachinesTab(_DialogsMixin):
         if self._form_open:
             self._close_machine_form()
 
+    @property
+    def is_editing(self) -> bool:
+        """True while the create/rename form replaces the list."""
+        return self._form_open
+
     def _is_dark_theme(self) -> bool:
         return is_dark_theme(self._page)
 
@@ -259,20 +264,10 @@ class MachinesTab(_DialogsMixin):
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             spacing=16,
             controls=[
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Text(
-                            heading,
-                            size=design.FONT_TITLE_LARGE,
-                            weight=ft.FontWeight.W_500,
-                        ),
-                        ft.IconButton(
-                            icon=ft.Icons.CLOSE,
-                            tooltip=COMMON["cancel"],
-                            on_click=lambda e: self._close_machine_form(),
-                        ),
-                    ],
+                ft.Text(
+                    heading,
+                    size=design.FONT_TITLE_LARGE,
+                    weight=ft.FontWeight.W_500,
                 ),
                 name_input,
                 ft.Row(controls=[image_dropdown]),
