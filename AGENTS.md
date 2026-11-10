@@ -65,9 +65,11 @@ SQLite persistence. Flet docs: https://flet.dev.
   `styles.dialog` / `styles.dialog_destructive`, `actions_alignment=ft.MainAxisAlignment.END`.
   The bottom sheet in `history_tab.py` uses `show_drag_handle=True`; `AlertDialog`
   does not support it.
-- Messages: `_show_snackbar` (2s, horizontal dismiss) for confirmations,
-  `_show_error` for failures. Both go through `page.show_dialog` / `page.pop_dialog`,
-  not the deprecated `page.snack_bar` / `page.dialog` fields.
+- Messages: `_show_snackbar` (4s, floating, close icon, horizontal dismiss) for
+  transient app-level notices; field errors go in `TextField.error` /
+  `Dropdown.error_text` and are cleared on change. `_show_error` (modal dialog)
+  for failures. All go through `page.show_dialog` / `page.pop_dialog`, not the
+  deprecated `page.snack_bar` / `page.dialog` fields.
 - Verify Flet API before use: `python -c "import flet as ft; print(hasattr(ft, 'X'))"`
   or `dir(ft)`. This project pins 1.0.5 and uses the newer APIs (`ft.Icons`,
   `ft.Colors`, `page.show_dialog`, `ft.run`). Read the installed source rather than
@@ -92,16 +94,17 @@ SQLite persistence. Flet docs: https://flet.dev.
   `_machine_list` keep 56px of bottom padding (40 + 16 margin).
 - Weights are floats in the DB and are shown with `format_weight()` (`ui/utils.py`),
   which uses the Spanish comma and always keeps a decimal (`80` → `80,0`). The
-  weight field accepts only a comma decimal separator; a dot is rejected with a
-  snackbar message.
+  weight field accepts only a comma decimal separator; a dot is rejected with an
+  inline field error that clears as soon as the value changes.
 
 ## Material baseline
 
 Trust the code over this line, but currently: bottom `NavigationBar` with 3 tabs,
 cards r15, outlined inputs r5, dropdown menus r5 with ~60dp item rows,
 rounded-square FABs r15, `AlertDialog`s r35, bottom sheet with drag handle,
-2s snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit light/dark text
-themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in `ui/design.py`.
+4s floating snackbars, `color_scheme_seed=ft.Colors.BLUE` with explicit
+light/dark text themes (17.5–27.5px). Every token scales from `SCALE = 1.25` in
+`ui/design.py`.
 
 ## Known gaps
 
@@ -134,14 +137,9 @@ finish or discover something instead of creating other status docs.
 
 ### Android design guidelines
 
-1. Snackbars use 2s and the fixed behaviour, so long messages (weight
-   validation) are hard to read with large text, and they have no action button
-   (no undo after a delete).
-2. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
+1. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
    `TextButton`, and the destructive action adds a border instead of using the
    `error` colour alone.
-3. No adaptive-icon config in `pyproject.toml`; Android falls back to
-   `assets/icon.png`.
 
 ## Cautions
 
