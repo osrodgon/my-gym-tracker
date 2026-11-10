@@ -4,7 +4,7 @@ from datetime import date
 from ui import design
 from ui.texts import DATE, ERRORS, COMMON
 
-_SNACKBAR_DURATION_MS = 2000
+_SNACKBAR_DURATION_MS = 4000
 
 
 def format_date(iso_date: str) -> str:
@@ -119,7 +119,9 @@ class _DialogsMixin:
             ft.SnackBar(
                 ft.Text(message),
                 duration=_SNACKBAR_DURATION_MS,
+                behavior=ft.SnackBarBehavior.FLOATING,
                 dismiss_direction=ft.DismissDirection.HORIZONTAL,
+                show_close_icon=True,
             )
         )
 
