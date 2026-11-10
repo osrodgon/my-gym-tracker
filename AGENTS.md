@@ -19,12 +19,13 @@ SQLite persistence. Flet docs: https://flet.dev.
   mounts `GymAppView` in a `SafeArea`, attaches `page.navigation_bar`, then calls
   `update_data()`.
 - `ui/views.py` — `GymAppView(ft.Column)`: builds the 3-tab scaffold, swaps tab
-  panels on nav change, and exposes `update_data()` which pushes fresh DB rows
-  into all tabs.
+  panels on nav change, hides the Máquinas FAB while its form is open, and
+  exposes `update_data()` which pushes fresh DB rows into all tabs.
 - `ui/usage_tab.py` — "Registrar": machine dropdown, weight field, last-used hint.
 - `ui/history_tab.py` — "Historial": grouped-by-machine cards with per-record
   delete, plus export/import via a `BottomSheet` opened from the only FAB.
-- `ui/machines_tab.py` — "Máquinas": create/rename/delete, SVG preview.
+- `ui/machines_tab.py` — "Máquinas": machine list; create/rename happen in an
+  in-tab form (no dialog), delete in a confirmation `AlertDialog`.
 - `ui/texts.py` — every user-facing string (dicts: `NAVIGATION`, `COMMON`, `USAGE`,
   `HISTORY`, `MACHINES`, `IMPORT`, `EXPORT`, `ERRORS`, `DATE`). Never hardcode UI text.
 - `ui/design.py` — Material 3 tokens: `SCALE`, `dp()`, radii, padding and type
@@ -53,6 +54,13 @@ SQLite persistence. Flet docs: https://flet.dev.
   whole tree changes.
 - After any DB mutation call the tab's `on_refresh` callback, which funnels into
   `GymAppView.update_data()`. Don't render tabs directly from outside.
+- Creating or renaming a machine is an in-tab form, not a dialog: `MachinesTab`
+  swaps `panel.content` between `_list_view` and the form, reports the mode via
+  `on_edit_mode_changed` so `GymAppView` hides the FAB, and `reset()` restores
+  the list (the view calls it on every nav change). The form is a non-scrolling
+  `Column` where the image preview expands to fill the leftover height, so the
+  two bottom actions (equal width, both `styles.primary`) stay anchored at the
+  bottom.
 - Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.OutlinedButton` with
   `styles.dialog` / `styles.dialog_destructive`, `actions_alignment=ft.MainAxisAlignment.END`.
   The bottom sheet in `history_tab.py` uses `show_drag_handle=True`; `AlertDialog`
@@ -129,14 +137,10 @@ finish or discover something instead of creating other status docs.
 1. Snackbars use 2s and the fixed behaviour, so long messages (weight
    validation) are hard to read with large text, and they have no action button
    (no undo after a delete).
-2. Creating and editing a machine uses a modal `AlertDialog` with a name field,
-   an image `Dropdown` and a preview. M3 reserves `AlertDialog` for short
-   decisions; a multi-field form should be a full-screen dialog or an in-tab
-   editing view, especially with large text and the keyboard open.
-3. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
+2. Dialog actions use `OutlinedButton`/`FilledButton` where M3 expects
    `TextButton`, and the destructive action adds a border instead of using the
    `error` colour alone.
-4. No adaptive-icon config in `pyproject.toml`; Android falls back to
+3. No adaptive-icon config in `pyproject.toml`; Android falls back to
    `assets/icon.png`.
 
 ## Cautions
@@ -157,4 +161,6 @@ finish or discover something instead of creating other status docs.
   no app bar, now or in the near future. `page.title` only sets the
   browser/window title.
 - **No screen headings by design**: the navigation bar label is enough, so don't
-  render a heading inside each tab or re-add the removed `heading` strings.
+  render a heading inside each tab or re-add the removed `heading` strings. The
+  only exception is the Máquinas create/rename form, which titles itself because
+  it replaces the tab's list.

@@ -23,7 +23,12 @@ class GymAppView(ft.Column):
         styles = ButtonStyles()
         self._usage_tab = UsageTab(db, styles, self._on_data_changed)
         self._history_tab = HistoryTab(db, self.file_picker, styles, self._on_data_changed)
-        self._machines_tab = MachinesTab(db, styles, self._on_data_changed)
+        self._machines_tab = MachinesTab(
+            db,
+            styles,
+            self._on_data_changed,
+            on_edit_mode_changed=self._on_machines_edit_mode_changed,
+        )
 
         self._build_navigation()
 
@@ -64,10 +69,20 @@ class GymAppView(ft.Column):
         if index is None or not 0 <= index < len(self._sections):
             return
         self._selected_section = index
+        self._machines_tab.reset()
         self.content_container.content = self._sections[index][1]
         if index == 0:
             self._usage_tab.reset()
         self._sync_floating_action_button()
+        self.page.update()
+
+    def _on_machines_edit_mode_changed(self, editing: bool) -> None:
+        """Hide the Máquinas FAB while its in-tab form is open."""
+        if self._selected_section != 2:
+            return
+        self.page.floating_action_button = (
+            None if editing else self._machines_tab.fab
+        )
         self.page.update()
 
     def _sync_floating_action_button(self) -> None:
