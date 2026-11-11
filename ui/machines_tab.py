@@ -1,7 +1,12 @@
 import flet as ft
 import sqlite3
 
-from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
+from machine_images import (
+    MACHINE_IMAGES,
+    get_machine_image_key,
+    get_machine_image_svg,
+    get_placeholder_image_svg,
+)
 from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
 from ui.utils import (
@@ -80,7 +85,13 @@ class MachinesTab(_DialogsMixin):
                 content=ft.ListTile(
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
-                    leading=ft.Icon(ft.Icons.HANDYMAN, color=ft.Colors.PRIMARY),
+                    leading=ft.Image(
+                        src=get_placeholder_image_svg(),
+                        width=design.LIST_ICON_SIZE,
+                        height=design.LIST_ICON_SIZE,
+                        fit=ft.BoxFit.CONTAIN,
+                        color=ft.Colors.PRIMARY,
+                    ),
                     title=ft.Text(machine_name),
                     trailing=ft.Row(
                         tight=True,

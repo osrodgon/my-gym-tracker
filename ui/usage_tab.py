@@ -64,6 +64,14 @@ class UsageTab(_DialogsMixin):
             expand=True,
         )
 
+        self._save_button = ft.FilledButton(
+            USAGE["save"],
+            icon=ft.Icons.CHECK,
+            on_click=self._on_log_usage_click,
+            style=self._styles.primary,
+            col={"xs": 12, "sm": 6},
+        )
+
         self.panel = self._build_panel()
 
     @property
@@ -147,13 +155,7 @@ class UsageTab(_DialogsMixin):
                     ),
                     ft.ResponsiveRow(
                         controls=[
-                            ft.FilledButton(
-                                USAGE["save"],
-                                icon=ft.Icons.CHECK,
-                                on_click=self._on_log_usage_click,
-                                style=self._styles.primary,
-                                col={"xs": 12, "sm": 6},
-                            ),
+                            self._save_button,
                         ],
                     ),
                 ],
@@ -201,6 +203,18 @@ class UsageTab(_DialogsMixin):
         if self._weight_input.error is not None:
             self._weight_input.error = None
             self._weight_input.update()
+
+    def _dismiss_keyboard(self) -> None:
+        """
+        Hides the on-screen keyboard.
+
+        Flet exposes no unfocus/blur API, so the only way is to move the focus
+        to a control that does not open a keyboard. `focus()` is a coroutine,
+        hence `page.run_task`.
+        """
+        page = self._page
+        if page is not None:
+            page.run_task(self._save_button.focus)
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -263,6 +277,7 @@ class UsageTab(_DialogsMixin):
             self._show_error(ERRORS["log_usage"].format(error=exc))
             return
 
+        self._dismiss_keyboard()
         self._on_refresh()
 
     def _show_overwrite_dialog(
@@ -281,6 +296,7 @@ class UsageTab(_DialogsMixin):
             except sqlite3.Error as exc:
                 self._show_error(ERRORS["log_usage"].format(error=exc))
                 return
+            self._dismiss_keyboard()
             self._on_refresh()
 
         self._page.show_dialog(
