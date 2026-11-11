@@ -41,12 +41,26 @@ _COLOR_RE = re.compile(
 
 _EMPTY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'
 
+# Generic machine silhouette used as the icon of every row in the machines
+# list. It is not a selectable machine image, so it stays out of MACHINE_IMAGES.
+PLACEHOLDER_IMAGE = "machines/machine.svg"
+
+
+def _read_svg(relative_path: str) -> str:
+    svg_path = Path(__file__).resolve().parent / "assets" / relative_path
+    return svg_path.read_text(encoding="utf-8")
+
+
+def get_placeholder_image_svg() -> bytes:
+    """Raw placeholder SVG, meant to be tinted with `ft.Image.color`."""
+    return _read_svg(PLACEHOLDER_IMAGE).encode("utf-8")
+
+
 def get_machine_image_svg(key: str | None, dark: bool) -> bytes:
     if key is None:
         return _EMPTY_SVG
 
-    svg_path = Path(__file__).resolve().parent / "assets" / MACHINE_IMAGES[key]
-    svg = svg_path.read_text(encoding="utf-8")
+    svg = _read_svg(MACHINE_IMAGES[key])
 
     if dark:
         svg = _COLOR_RE.sub(

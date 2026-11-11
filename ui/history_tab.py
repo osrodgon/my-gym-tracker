@@ -156,7 +156,7 @@ class HistoryTab(_DialogsMixin):
             ft.BottomSheet(
                 show_drag_handle=True,
                 content=ft.Container(
-                    padding=16,
+                    padding=design.SHEET_PADDING,
                     content=ft.Column(
                         tight=True,
                         controls=[
