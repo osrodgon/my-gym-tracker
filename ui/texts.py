@@ -10,17 +10,25 @@ COMMON = {
     "accept": "Aceptar",
 }
 
+SERIES = {
+    "with_reps": "{weight} kg × {reps} reps",
+}
+"""Formatting of a logged set. A record with no rep count is shown with
+`database.DEFAULT_REPS` instead of a partial value."""
+
 USAGE = {
     "machine_label": "Máquina",
     "weight_label": "Peso (kg)",
-    "select_machine": "Selecciona una máquina para ver su último registro.",
-    "no_records": "Aún no hay registros para esta máquina.",
-    "latest_weight": "Último uso: {weight} kg · {date}",
-    "save": "Guardar uso",
+    "reps_label": "Reps (12)",
+    "select_machine": "Selecciona una máquina arriba",
+    "no_records": "Sin registros previos",
+    "latest_prefix": "Último registro: ",
+    "save": "Guardar serie",
+    "saved": "Serie guardada.",
     "duplicate_title": "Registro duplicado",
     "duplicate_message": (
-        "Ya has registrado {machine} hoy con {weight} kg. "
-        "¿Sobrescribir el registro con {new_weight} kg?"
+        "Ya has registrado {machine} hoy ({current}). "
+        "¿Sobrescribir el registro con {new}?"
     ),
     "overwrite": "Sobrescribir",
 }
@@ -31,8 +39,7 @@ HISTORY = {
     "export": "Exportar a Excel",
     "import": "Importar desde Excel",
     "options_tooltip": "Opciones del historial",
-    "latest": "Último: {weight} kg · {date}",
-    "weight": "{weight} kg",
+    "latest": "Último: {value} · {date}",
     "delete": "Eliminar registro",
     "delete_title": "Eliminar registro",
     "delete_record": "¿Estás seguro de eliminar este registro?",
@@ -68,11 +75,23 @@ IMPORT = {
     "failed": "No se pudo importar: {error}",
     "completed": "Importación completada: {machines} máquinas y {usages} registros.",
     "result_title": "Resultado de la importación",
+    "invalid_headers": "Las columnas deben ser: {columns}.",
+    "invalid_reps": (
+        "Las repeticiones de «{machine}» deben ser un número entero "
+        "entre 1 y 999."
+    ),
+    "missing_machine": "Hay una fila con datos pero sin nombre de máquina.",
+    "usage_without_date": "La máquina «{machine}» tiene datos pero no fecha.",
+    "usage_without_weight": "La máquina «{machine}» tiene fecha pero no peso.",
+    "invalid_date_or_weight": "Fecha o peso no válido para la máquina «{machine}».",
+    "invalid_weight": "El peso de «{machine}» debe ser un número válido.",
+    "no_machines": "El Excel no contiene ninguna máquina.",
 }
 
 EXPORT = {
     "dialog_title": "Exportar historial a Excel",
     "file_name": "historial_gimnasio.xlsx",
+    "headers": ("Fecha", "Máquina", "Peso (kg)", "Repeticiones"),
 }
 
 ERRORS = {
@@ -84,8 +103,13 @@ ERRORS = {
         "Usa coma para los decimales (por ejemplo, 55,3)."
     ),
     "weight_out_of_range": "El peso debe ser mayor que 0 y no superar {max} kg.",
+    "invalid_reps": (
+        "Las repeticiones deben ser un número entero (por ejemplo, 12)."
+    ),
+    "reps_out_of_range": "Las repeticiones deben estar entre 1 y {max}.",
     "duplicate_machine": "Ya existe una máquina con ese nombre.",
     "log_usage": "No se pudo guardar el registro: {error}",
+    "delete_usage": "No se pudo eliminar el registro: {error}",
     "add_machine": "No se pudo crear la máquina: {error}",
     "rename_machine": "No se pudieron guardar los cambios: {error}",
     "delete_machine": "No se pudo eliminar la máquina: {error}",

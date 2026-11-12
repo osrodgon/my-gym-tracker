@@ -1,77 +1,55 @@
 import re
 import unicodedata
-import base64
 from pathlib import Path
 
 # The keys are the filenames without extension and serve as stable 
-# identifiers, independent of the machine name.
+# identifiers, independent of the machine name. Values are paths under
+# assets/; every drawing is a WebP bitmap, so there is no light/dark variant.
 MACHINE_IMAGES = {
-    "abdominales": "machines/abs.svg",
-    "abduccion": "machines/abduction.svg",
-    "contraccion-abdominal": "machines/abdominal-crunch.svg",
-    "curl-de-biceps": "machines/bicep-curl.svg",
-    "curl-de-piernas": "machines/leg-curl.svg",
-    "extension-de-espalda": "machines/back-extension.svg",
-    "extension-de-gemelos": "machines/calf-extension.svg",
-    "extension-de-piernas": "machines/leg-extension.svg",
-    "extension-de-triceps": "machines/tricep-extension.svg",
-    "jalon-al-pecho": "machines/lat-pulldown.svg",
-    "mancuernas": "machines/dumbbells.svg",
-    "press-de-hombros": "machines/shoulder-press.svg",
-    "press-de-pecho": "machines/chest-press.svg",
-    "press-de-piernas": "machines/leg-press.svg",
-    "press-de-triceps": "machines/tricep-press.svg",
+    "abdominales": "machines/abs.webp",
+    "abduccion": "machines/abduction.webp",
+    "contraccion-abdominal": "machines/abdominal-crunch.webp",
+    "curl-de-biceps": "machines/bicep-curl.webp",
+    "curl-de-piernas": "machines/leg-curl.webp",
+    "extension-de-espalda": "machines/back-extension.webp",
+    "extension-de-gemelos": "machines/calf-extension.webp",
+    "extension-de-piernas": "machines/leg-extension.webp",
+    "extension-de-triceps": "machines/tricep-extension.webp",
+    "jalon-al-pecho": "machines/lat-pulldown.webp",
+    "mancuernas": "machines/dumbbells.webp",
+    "press-de-hombros": "machines/shoulder-press.webp",
+    "press-de-pecho": "machines/chest-press.webp",
+    "press-de-piernas": "machines/leg-press.webp",
+    "press-de-triceps": "machines/tricep-press.webp",
 }
 
-_INVERTED_COLORS = {
-    "#000000": "#ffffff",
-    "#000": "#fff",
-    "#ffffff": "#000000",
-    "#fff": "#000",
-    "black": "white",
-    "white": "black",
-}
+# Shown in the Registrar image card while no machine is selected. It is not a
+# selectable machine image, so it stays out of MACHINE_IMAGES.
+NO_SELECTION_IMAGE = "machines/no-selection.webp"
 
-_COLOR_RE = re.compile(
-    r"(?P<prefix>\b(?:fill|stroke)\s*[:=]\s*[\"']?)"
-    r"(?P<color>#(?:ffffff|fff|000000|000)|white|black)"
-    r"(?![a-z0-9])",
-    re.IGNORECASE,
-)
-
-_EMPTY_SVG = b'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>'
-
-# Generic machine silhouette used as the icon of every row in the machines
-# list. It is not a selectable machine image, so it stays out of MACHINE_IMAGES.
+# Monochrome machine silhouette used as a small icon (the latest-record banner
+# and the rows of the machines list). It is the only SVG in the app: being
+# vector and single-colour, it is tinted with `ft.Image.color`.
 PLACEHOLDER_IMAGE = "machines/machine.svg"
 
 
-def _read_svg(relative_path: str) -> str:
-    svg_path = Path(__file__).resolve().parent / "assets" / relative_path
-    return svg_path.read_text(encoding="utf-8")
+def _asset_path(relative_path: str) -> Path:
+    return Path(__file__).resolve().parent / "assets" / relative_path
 
 
-def get_placeholder_image_svg() -> bytes:
+def get_machine_image(key: str) -> bytes:
+    """WebP bytes of the drawing mapped to `key`, ready for `ft.Image.src`."""
+    return _asset_path(MACHINE_IMAGES[key]).read_bytes()
+
+
+def get_no_selection_image() -> bytes:
+    """Generic gym picture shown before a machine is chosen."""
+    return _asset_path(NO_SELECTION_IMAGE).read_bytes()
+
+
+def get_placeholder_image() -> bytes:
     """Raw placeholder SVG, meant to be tinted with `ft.Image.color`."""
-    return _read_svg(PLACEHOLDER_IMAGE).encode("utf-8")
-
-
-def get_machine_image_svg(key: str | None, dark: bool) -> bytes:
-    if key is None:
-        return _EMPTY_SVG
-
-    svg = _read_svg(MACHINE_IMAGES[key])
-
-    if dark:
-        svg = _COLOR_RE.sub(
-            lambda match: (
-                match.group("prefix")
-                + _INVERTED_COLORS[match.group("color").lower()]
-            ),
-            svg,
-        )
-
-    return svg.encode("utf-8")
+    return _asset_path(PLACEHOLDER_IMAGE).read_bytes()
 
 
 def normalize_machine_name(name: str) -> str:

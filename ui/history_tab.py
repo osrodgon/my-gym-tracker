@@ -5,8 +5,8 @@ import sqlite3
 from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
 from ui import design
-from ui.texts import COMMON, EXPORT, HISTORY, IMPORT, MACHINES
-from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_weight
+from ui.texts import COMMON, ERRORS, EXPORT, HISTORY, IMPORT, MACHINES
+from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_series
 
 
 class HistoryTab(_DialogsMixin):
@@ -76,14 +76,27 @@ class HistoryTab(_DialogsMixin):
             return
 
         grouped: dict = {}
-        for machine_id, machine_name, weight, usage_date in results:
+        for (
+            usage_id,
+            machine_id,
+            machine_name,
+            weight,
+            reps,
+            usage_date,
+        ) in results:
             if machine_id not in grouped:
-                grouped[machine_id] = {"name": machine_name, "entries": [], "id": machine_id}
-            grouped[machine_id]["entries"].append((weight, usage_date))
+                grouped[machine_id] = {
+                    "name": machine_name,
+                    "entries": [],
+                    "id": machine_id,
+                }
+            grouped[machine_id]["entries"].append(
+                (usage_id, weight, reps, usage_date)
+            )
 
         for machine in grouped.values():
             entries = machine["entries"]
-            latest_weight, latest_date = entries[0]
+            _latest_id, latest_weight, latest_reps, latest_date = entries[0]
             self._summary_list.controls.append(
                 ft.Card(
                     margin=0,
@@ -92,7 +105,7 @@ class HistoryTab(_DialogsMixin):
                         title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
                         subtitle=ft.Text(
                             HISTORY["latest"].format(
-                                weight=format_weight(latest_weight),
+                                value=format_series(latest_weight, latest_reps),
                                 date=format_date(latest_date),
                             ),
                             italic=True,
@@ -105,9 +118,7 @@ class HistoryTab(_DialogsMixin):
                                     spacing=10,
                                     controls=[
                                         ft.Text(
-                                            HISTORY["weight"].format(
-                                                weight=format_weight(entry_weight)
-                                            ),
+                                            format_series(entry_weight, entry_reps),
                                             theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
                                             color=ft.Colors.PRIMARY,
                                         ),
@@ -115,14 +126,14 @@ class HistoryTab(_DialogsMixin):
                                             icon=ft.Icons.DELETE,
                                             icon_color=ft.Colors.ERROR,
                                             tooltip=HISTORY["delete"],
-                                            on_click=lambda e, mid=machine["id"], w=entry_weight, d=entry_date: (
-                                                self._show_delete_confirmation(mid, w, d)
+                                            on_click=lambda e, uid=entry_id: (
+                                                self._show_delete_confirmation(uid)
                                             ),
                                         ),
                                     ],
                                 ),
                             )
-                            for entry_weight, entry_date in entries
+                            for entry_id, entry_weight, entry_reps, entry_date in entries
                         ],
                     ),
                 )
@@ -189,13 +200,19 @@ class HistoryTab(_DialogsMixin):
 
 
 
-    def _show_delete_confirmation(self, machine_id: int, weight: float, date: str) -> None:
+    def _show_delete_confirmation(self, usage_id: int) -> None:
         """Show confirmation dialog and delete the specific usage record."""
         def _confirm_delete(e) -> None:
-            self._db.delete_usage_by_machine_weight_date(machine_id, weight, date)
+            try:
+                self._db.delete_usage(usage_id)
+            except sqlite3.Error as exc:
+                self._page.pop_dialog()
+                self._show_error(ERRORS["delete_usage"].format(error=exc))
+                return
+
+            self._page.pop_dialog()
             # Refresh the data after deletion
             self._on_refresh()
-            self._page.pop_dialog()
 
         self._page.show_dialog(
             ft.AlertDialog(
