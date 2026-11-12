@@ -4,8 +4,11 @@ from math import isfinite
 from xml.etree import ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 
+from ui.texts import EXPORT, IMPORT
+
 
 _NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+_MAX_REPS = 999
 
 
 def _cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
@@ -45,9 +48,30 @@ def _parse_excel_date(value: str) -> str:
         raise ValueError(f"Fecha no válida: {value}") from exc
 
 
+def _parse_reps(value: str, machine_name: str) -> int:
+    """Parse the reps cell, accepting Excel's `12` and `12.0` spellings."""
+    try:
+        numeric = float(value)
+    except ValueError as exc:
+        raise ValueError(
+            IMPORT["invalid_reps"].format(machine=machine_name)
+        ) from exc
+
+    if (
+        not isfinite(numeric)
+        or not numeric.is_integer()
+        or not 1 <= int(numeric) <= _MAX_REPS
+    ):
+        raise ValueError(
+            IMPORT["invalid_reps"].format(machine=machine_name)
+        )
+
+    return int(numeric)
+
+
 def parse_usage_workbook(
     workbook_bytes: bytes,
-) -> tuple[list[str], list[tuple[str, str, float]]]:
+) -> tuple[list[str], list[tuple[str, str, float, int | None]]]:
     try:
         with ZipFile(BytesIO(workbook_bytes)) as archive:
             worksheet = ET.fromstring(
@@ -84,48 +108,59 @@ def parse_usage_workbook(
         for cell in row.findall(f"{{{_NS}}}c"):
             reference = cell.get("r", "")
             column = "".join(char for char in reference if char.isalpha())
-            if column in {"A", "B", "C"}:
+            if column in {"A", "B", "C", "D"}:
                 values[column] = _cell_text(cell, shared_strings)
         return values
 
     headers = read_row(rows[0])
-    if [headers.get(column, "") for column in ("A", "B", "C")] != [
-        "Fecha",
-        "Máquina",
-        "Peso (kg)",
-    ]:
+    header_values = [headers.get(column, "").strip() for column in "ABCD"]
+    expected_headers = list(EXPORT["headers"])
+
+    # 2.2.0 workbooks carry the Repeticiones column; older ones stop at Peso.
+    has_reps_column = header_values == expected_headers
+    if not has_reps_column and header_values[:3] != expected_headers[:3]:
         raise ValueError(
-            "Las columnas deben ser: Fecha, Máquina y Peso (kg)."
+            IMPORT["invalid_headers"].format(
+                columns=", ".join(expected_headers)
+            )
         )
 
     machines: dict[str, None] = {}
-    usages: list[tuple[str, str, float]] = []
+    usages: list[tuple[str, str, float, int | None]] = []
 
     for row in rows[1:]:
         values = read_row(row)
         usage_date = values.get("A", "").strip()
         machine_name = values.get("B", "").strip()
         weight_text = values.get("C", "").strip()
+        reps_text = values.get("D", "").strip() if has_reps_column else ""
 
-        if not usage_date and not machine_name and not weight_text:
+        if (
+            not usage_date
+            and not machine_name
+            and not weight_text
+            and not reps_text
+        ):
             continue
 
         if not machine_name:
-            raise ValueError("Hay una fila con datos pero sin nombre de máquina.")
+            raise ValueError(
+                IMPORT["missing_machine"]
+            )
 
         machines.setdefault(machine_name, None)
 
         # A blank date and blank weight indicate a machine that has not been used.
         if not usage_date:
-            if weight_text:
+            if weight_text or reps_text:
                 raise ValueError(
-                    f"La máquina «{machine_name}» tiene peso pero no fecha."
+                    IMPORT["usage_without_date"].format(machine=machine_name)
                 )
             continue
 
         if not weight_text:
             raise ValueError(
-                f"La máquina «{machine_name}» tiene fecha pero no peso."
+                IMPORT["usage_without_weight"].format(machine=machine_name)
             )
 
         try:
@@ -133,17 +168,19 @@ def parse_usage_workbook(
             weight = float(weight_text)
         except ValueError as exc:
             raise ValueError(
-                f"Fecha o peso no válido para la máquina «{machine_name}»."
+                IMPORT["invalid_date_or_weight"].format(machine=machine_name)
             ) from exc
 
         if not isfinite(weight):
             raise ValueError(
-                f"El peso de «{machine_name}» debe ser un número válido."
+                IMPORT["invalid_weight"].format(machine=machine_name)
             )
 
-        usages.append((normalized_date, machine_name, weight))
+        reps = _parse_reps(reps_text, machine_name) if reps_text else None
+
+        usages.append((normalized_date, machine_name, weight, reps))
 
     if not machines:
-        raise ValueError("El Excel no contiene ninguna máquina.")
+        raise ValueError(IMPORT["no_machines"])
 
     return list(machines), usages

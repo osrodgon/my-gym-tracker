@@ -4,8 +4,9 @@ import sqlite3
 from machine_images import (
     MACHINE_IMAGES,
     get_machine_image_key,
-    get_machine_image_svg,
-    get_placeholder_image_svg,
+    get_machine_image,
+    get_no_selection_image,
+    get_placeholder_image,
 )
 from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
@@ -13,8 +14,11 @@ from ui.utils import (
     ButtonStyles,
     _DialogsMixin,
     create_dropdown,
-    is_dark_theme,
+    create_text_field,
 )
+
+_SWIPE_VELOCITY = 400
+"""px/s a horizontal drag must reach to count as an image swipe."""
 
 
 class MachinesTab(_DialogsMixin):
@@ -86,7 +90,7 @@ class MachinesTab(_DialogsMixin):
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
                     leading=ft.Image(
-                        src=get_placeholder_image_svg(),
+                        src=get_placeholder_image(),
                         width=design.LIST_ICON_SIZE,
                         height=design.LIST_ICON_SIZE,
                         fit=ft.BoxFit.CONTAIN,
@@ -140,9 +144,6 @@ class MachinesTab(_DialogsMixin):
         """True while the create/rename form replaces the list."""
         return self._form_open
 
-    def _is_dark_theme(self) -> bool:
-        return is_dark_theme(self._page)
-
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
@@ -164,18 +165,14 @@ class MachinesTab(_DialogsMixin):
             else current_image_key
         )
 
-        name_input = ft.TextField(
+        name_input = create_text_field(
             label=MACHINES["new_name_label"] if is_new else MACHINES["new_name"],
             value=machine_name,
-            text_style=ft.TextStyle(size=design.FONT_BODY_LARGE),
-            border=ft.OutlineInputBorder(border_radius=design.FIELD_RADIUS),
-            content_padding=design.FIELD_CONTENT_PADDING,
         )
 
         image_dropdown = create_dropdown(
             label=MACHINES["image_label"],
             value=initial_image_key or "none",
-            text_size=design.FONT_BODY_LARGE,
             options=[
                 ft.DropdownOption(
                     key="none",
@@ -196,29 +193,65 @@ class MachinesTab(_DialogsMixin):
         )
 
         image_preview = ft.Image(
-            src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
+            src="",
             fit=ft.BoxFit.CONTAIN,
             expand=True,
+            opacity=design.IMAGE_OPACITY,
         )
+        # Same tonal card as the Registrar image: it takes the height the fields
+        # and the form actions leave free, and shrinks with them when the Android
+        # keyboard opens.
         image_preview_container = ft.Container(
-            aspect_ratio=1.4,
+            expand=True,
             alignment=ft.Alignment.CENTER,
-            visible=initial_image_key is not None,
+            bgcolor=design.SURFACE_PANEL_COLOR,
+            border_radius=design.IMAGE_CARD_RADIUS,
+            padding=design.IMAGE_CARD_PADDING,
             content=image_preview,
         )
 
+        # --- Card sizing: measure the fixed rows once, then fix the height. ---
+
+        def _apply_preview(selected_key: str | None) -> None:
+            # `ft.Image.color` blends every pixel with that colour and would
+            # flatten the drawing into a silhouette, so it is never set here.
+            if selected_key is None:
+                # The generic drawing is tightly framed: scale it down so it
+                # matches the weight of the machine illustrations.
+                image_preview.scale = design.NO_SELECTION_IMAGE_SCALE
+                image_preview.src = get_no_selection_image()
+                return
+
+            image_preview.scale = None
+            image_preview.src = get_machine_image(selected_key)
+
         def _update_image_preview() -> None:
-            image_preview.color = (
-                ft.Colors.WHITE if self._is_dark_theme() else ft.Colors.BLACK
-            )
             selected_key = image_dropdown.value
             has_image = selected_key is not None and selected_key != "none"
-            image_preview.src = get_machine_image_svg(
-                selected_key if has_image else None,
-                dark=self._is_dark_theme(),
-            )
-            image_preview_container.visible = has_image
+            _apply_preview(selected_key if has_image else None)
             image_preview_container.update()
+
+        def _on_swipe_image(e) -> None:
+            """Move to the previous/next image of the catalog, wrapping around."""
+            velocity = e.primary_velocity or 0
+            if abs(velocity) < _SWIPE_VELOCITY:
+                return
+
+            options = ["none", *MACHINE_IMAGES]
+            current = image_dropdown.value
+            index = options.index(current) if current in options else 0
+
+            if velocity < 0:
+                index = (index + 1) % len(options)
+            else:
+                index = (index - 1) % len(options)
+
+            image_dropdown.value = options[index]
+            _update_image_preview()
+
+        _apply_preview(
+            initial_image_key if initial_image_key is not None else None
+        )
 
         def _handle_name_change(e) -> None:
             nonlocal automatic_image_key
@@ -270,9 +303,10 @@ class MachinesTab(_DialogsMixin):
         heading = (
             MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
         )
+        # No scroll on the field block: the preview card is the flexible child
+        # and absorbs the free height, exactly like the Registrar image card.
         fields = ft.Column(
             expand=True,
-            scroll=ft.ScrollMode.AUTO,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             spacing=16,
             controls=[
@@ -283,7 +317,11 @@ class MachinesTab(_DialogsMixin):
                 ),
                 name_input,
                 ft.Row(controls=[image_dropdown]),
-                image_preview_container,
+                ft.GestureDetector(
+                    expand=True,
+                    on_horizontal_drag_end=_on_swipe_image,
+                    content=image_preview_container,
+                ),
             ],
         )
         form = ft.Column(

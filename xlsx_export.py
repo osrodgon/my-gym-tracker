@@ -4,6 +4,8 @@ from typing import Iterable, Sequence
 from xml.etree import ElementTree as ET
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from ui.texts import EXPORT
+
 
 _MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _DOCUMENT_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -22,7 +24,7 @@ def build_usage_history_workbook(
 
     worksheet = ET.Element(f"{{{_MAIN_NS}}}worksheet")
     sheet_data = ET.SubElement(worksheet, f"{{{_MAIN_NS}}}sheetData")
-    _append_row(sheet_data, 1, ("Fecha", "Máquina", "Peso (kg)"))
+    _append_row(sheet_data, 1, EXPORT["headers"])
 
     for row_number, row in enumerate(rows, start=2):
         _append_row(sheet_data, row_number, row)
@@ -144,7 +146,7 @@ def _append_row(
         {"r": str(row_number)},
     )
 
-    for column, value in zip(("A", "B", "C"), values):
+    for column, value in zip(("A", "B", "C", "D"), values):
         if value is None:
             continue
 

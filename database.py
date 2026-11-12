@@ -3,6 +3,11 @@ import datetime
 
 from machine_images import MACHINE_IMAGES, get_machine_image_key
 
+DEFAULT_REPS = 12
+"""Reps assumed for a record that has none: rows logged before the reps column
+existed and three-column Excel imports. The value is normalised into the table
+on startup, so every stored set ends up with an explicit rep count."""
+
 class GymDatabase:
     def __init__(self, db_name="gym.db"):
         self.db_name = db_name
@@ -27,6 +32,7 @@ class GymDatabase:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     machine_id INTEGER,
                     weight REAL NOT NULL,
+                    reps INTEGER,
                     date TEXT NOT NULL,
                     FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE CASCADE
                 )
@@ -55,6 +61,23 @@ class GymDatabase:
                             "UPDATE machines SET image_key = ? WHERE id = ?",
                             (image_key, machine_id),
                         )
+
+            # Databases created before 2.2.0 have no reps column. Older records
+            # keep NULL here and are normalised to DEFAULT_REPS below.
+            usage_columns = {
+                row[1]
+                for row in cursor.execute("PRAGMA table_info(usages)")
+            }
+
+            if "reps" not in usage_columns:
+                cursor.execute("ALTER TABLE usages ADD COLUMN reps INTEGER")
+
+            # A set without reps is treated as DEFAULT_REPS rather than as an
+            # incomplete record, so the history renders one uniform shape.
+            cursor.execute(
+                "UPDATE usages SET reps = ? WHERE reps IS NULL",
+                (DEFAULT_REPS,),
+            )
 
             conn.commit()
 
@@ -88,7 +111,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT m.id, m.name, u.weight, u.date
+                SELECT u.id, m.id, m.name, u.weight, u.reps, u.date
                 FROM usages u
                 JOIN machines m ON m.id = u.machine_id
                 ORDER BY u.date DESC, u.id DESC
@@ -107,7 +130,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT u.date, m.name, u.weight
+                SELECT u.date, m.name, u.weight, u.reps
                 FROM machines m
                 LEFT JOIN usages u ON u.machine_id = m.id
                 ORDER BY u.date ASC, u.id ASC
@@ -118,7 +141,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT weight, date
+                SELECT weight, reps, date
                 FROM usages
                 WHERE machine_id = ?
                 ORDER BY date DESC, id DESC
@@ -131,25 +154,35 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT id, weight FROM usages WHERE machine_id = ? AND date = ?",
+                """
+                SELECT id, weight, reps
+                FROM usages
+                WHERE machine_id = ? AND date = ?
+                """,
                 (machine_id, usage_date),
             )
             return cursor.fetchone()
 
-    def log_use(self, machine_id, weight):
+    def log_use(self, machine_id, weight, reps):
         today = self._today()
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO usages (machine_id, weight, date) VALUES (?, ?, ?)", (machine_id, weight, today))
+            cursor.execute(
+                """
+                INSERT INTO usages (machine_id, weight, reps, date)
+                VALUES (?, ?, ?, ?)
+                """,
+                (machine_id, weight, reps, today),
+            )
             conn.commit()
 
-    def update_usage_weight(self, usage_id: int, weight: float) -> None:
-        """Update the weight of an existing usage record."""
+    def update_usage(self, usage_id: int, weight: float, reps: int) -> None:
+        """Overwrite the weight and reps of an existing usage record."""
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE usages SET weight = ? WHERE id = ?",
-                (weight, usage_id),
+                "UPDATE usages SET weight = ?, reps = ? WHERE id = ?",
+                (weight, reps, usage_id),
             )
             conn.commit()
 
@@ -183,19 +216,6 @@ class GymDatabase:
             cursor.execute("DELETE FROM usages WHERE machine_id = ?", (machine_id,))
             cursor.execute("DELETE FROM machines WHERE id = ?", (machine_id,))
 
-
-
-
-    def delete_usage_by_machine_weight_date(self, machine_id: int, weight: float, date: str) -> None:
-        """Delete a usage record by machine_id, weight, and date combination."""
-        with self._connect() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM usages WHERE machine_id = ? AND weight = ? AND date = ?",
-                (machine_id, weight, date),
-            )
-            conn.commit()
-
     def delete_usage(self, usage_id: int) -> None:
         """Delete a usage record by ID."""
         with self._connect() as conn:
@@ -206,7 +226,7 @@ class GymDatabase:
     def replace_data(
         self,
         machines: list[str],
-        usages: list[tuple[str, str, float]],
+        usages: list[tuple[str, str, float, int | None]],
     ):
         with self._connect() as conn:
             cursor = conn.cursor()
@@ -231,18 +251,22 @@ class GymDatabase:
 
             # The unique index allows one usage per machine and date, so an
             # imported workbook with duplicates keeps the last row for each pair.
-            unique_usages: dict[tuple[str, str], float] = {}
-            for usage_date, machine_name, weight in usages:
-                unique_usages[(usage_date, machine_name)] = weight
+            unique_usages: dict[tuple[str, str], tuple[float, int]] = {}
+            for usage_date, machine_name, weight, reps in usages:
+                unique_usages[(usage_date, machine_name)] = (
+                    weight,
+                    DEFAULT_REPS if reps is None else reps,
+                )
 
             cursor.executemany(
                 """
-                INSERT INTO usages (date, machine_id, weight)
-                VALUES (?, ?, ?)
+                INSERT INTO usages (date, machine_id, weight, reps)
+                VALUES (?, ?, ?, ?)
                 """,
                 [
-                    (usage_date, machine_ids[machine_name], weight)
-                    for (usage_date, machine_name), weight in unique_usages.items()
+                    (usage_date, machine_ids[machine_name], weight, reps)
+                    for (usage_date, machine_name), (weight, reps)
+                    in unique_usages.items()
                 ],
             )
 
