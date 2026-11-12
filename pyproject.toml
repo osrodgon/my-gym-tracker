@@ -1,6 +1,6 @@
 [project]
 name = "gymtracker"
-version = "2.2.0"
+version = "3.0.0"
 description = "Una aplicación modular para hacer seguimiento de tus entrenamientos."
 requires-python = ">=3.10"
 dependencies = [
