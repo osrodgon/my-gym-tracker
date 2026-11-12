@@ -1,7 +1,12 @@
 import flet as ft
 import sqlite3
 
-from machine_images import MACHINE_IMAGES, get_machine_image_key, get_machine_image_svg
+from machine_images import (
+    MACHINE_IMAGES,
+    get_machine_image_key,
+    get_machine_image_svg,
+    get_placeholder_image_svg,
+)
 from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
 from ui.utils import (
@@ -80,7 +85,13 @@ class MachinesTab(_DialogsMixin):
                 content=ft.ListTile(
                     horizontal_spacing=8,
                     content_padding=ft.Padding.only(left=16, right=4),
-                    leading=ft.Icon(ft.Icons.HANDYMAN, color=ft.Colors.PRIMARY),
+                    leading=ft.Image(
+                        src=get_placeholder_image_svg(),
+                        width=design.LIST_ICON_SIZE,
+                        height=design.LIST_ICON_SIZE,
+                        fit=ft.BoxFit.CONTAIN,
+                        color=ft.Colors.PRIMARY,
+                    ),
                     title=ft.Text(machine_name),
                     trailing=ft.Row(
                         tight=True,
@@ -123,6 +134,11 @@ class MachinesTab(_DialogsMixin):
         """Show the list again, discarding an open machine form."""
         if self._form_open:
             self._close_machine_form()
+
+    @property
+    def is_editing(self) -> bool:
+        """True while the create/rename form replaces the list."""
+        return self._form_open
 
     def _is_dark_theme(self) -> bool:
         return is_dark_theme(self._page)
@@ -182,12 +198,12 @@ class MachinesTab(_DialogsMixin):
         image_preview = ft.Image(
             src=get_machine_image_svg(initial_image_key, dark=self._is_dark_theme()),
             fit=ft.BoxFit.CONTAIN,
-            visible=initial_image_key is not None,
             expand=True,
         )
         image_preview_container = ft.Container(
-            expand=True,
+            aspect_ratio=1.4,
             alignment=ft.Alignment.CENTER,
+            visible=initial_image_key is not None,
             content=image_preview,
         )
 
@@ -201,8 +217,8 @@ class MachinesTab(_DialogsMixin):
                 selected_key if has_image else None,
                 dark=self._is_dark_theme(),
             )
-            image_preview.visible = has_image
-            image_preview.update()
+            image_preview_container.visible = has_image
+            image_preview_container.update()
 
         def _handle_name_change(e) -> None:
             nonlocal automatic_image_key
@@ -254,29 +270,27 @@ class MachinesTab(_DialogsMixin):
         heading = (
             MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
         )
-        form = ft.Column(
+        fields = ft.Column(
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             spacing=16,
             controls=[
-                ft.Row(
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    controls=[
-                        ft.Text(
-                            heading,
-                            size=design.FONT_TITLE_LARGE,
-                            weight=ft.FontWeight.W_500,
-                        ),
-                        ft.IconButton(
-                            icon=ft.Icons.CLOSE,
-                            tooltip=COMMON["cancel"],
-                            on_click=lambda e: self._close_machine_form(),
-                        ),
-                    ],
+                ft.Text(
+                    heading,
+                    size=design.FONT_TITLE_LARGE,
+                    weight=ft.FontWeight.W_500,
                 ),
                 name_input,
                 ft.Row(controls=[image_dropdown]),
                 image_preview_container,
+            ],
+        )
+        form = ft.Column(
+            expand=True,
+            spacing=16,
+            controls=[
+                fields,
                 ft.ResponsiveRow(
                     run_spacing=8,
                     controls=[

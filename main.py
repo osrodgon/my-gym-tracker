@@ -90,6 +90,9 @@ def main(page: ft.Page):
             expand=True,
         )
     )
+    # Android back closes the machine form instead of leaving the app; the view
+    # only intercepts it while that form is open (see GymAppView).
+    page.views[0].on_confirm_pop = app_view.on_confirm_pop
     app_view.update_data()  # Initial call to load data when starting the application
 
 if __name__ == "__main__":

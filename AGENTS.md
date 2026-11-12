@@ -57,11 +57,17 @@ SQLite persistence. Flet docs: https://flet.dev.
 - Creating or renaming a machine is an in-tab form, not a dialog: `MachinesTab`
   swaps `panel.content` between `_list_view` and the form, reports the mode via
   `on_edit_mode_changed` so `GymAppView` hides the FAB, and `reset()` restores
-  the list (the view calls it on every nav change). The form is a non-scrolling
-  `Column` where the image preview expands to fill the leftover height, so the
-  two bottom actions stay anchored at the bottom: a `ResponsiveRow` with
-  `col={"xs": 12, "sm": 6}`, both `styles.primary` so they match in size, full
-  width and stacked on xs, side by side from `sm`.
+  the list (the view calls it on every nav change). The form is a `Column` with
+  a scrollable field block (title, name, dropdown, preview) and the actions
+  pinned below it, so the buttons stay reachable with the keyboard open: a
+  `ResponsiveRow` with `col={"xs": 12, "sm": 6}`, both `styles.primary` so they
+  match in size, full width and stacked on xs, side by side from `sm`. The
+  preview uses `aspect_ratio=1.4` (never `expand` inside a scrollable column)
+  and its container is hidden when the machine has no image. Android back closes
+  the form instead of leaving the app: `GymAppView` sets
+  `page.views[0].can_pop` to `not editing` and resolves the gesture in
+  `on_confirm_pop` (wired in `main.py`), so on the list the back gesture keeps
+  its native behaviour.
 - Dialogs: `ft.AlertDialog(modal=True)`, actions as `ft.TextButton` with
   `styles.dialog` / `styles.dialog_destructive` (error colour, no border or
   fill), `actions_alignment=ft.MainAxisAlignment.END`. The bottom sheet in
@@ -140,19 +146,6 @@ finish or discover something instead of creating other status docs.
 11. Import error messages are hardcoded in `xlsx_import.py` instead of `ERRORS`.
 12. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
 13. `GymDatabase.delete_usage(id)` is never called.
-
-### Design (Android/M3)
-
-1. **No back handling for the in-tab machine form.** The create/rename form is
-   tab content, not a route, and neither `page.on_view_pop` nor
-   `on_route_change` is wired, so the Android back gesture leaves the app
-   instead of returning to the list. Dialogs and the bottom sheet are routes and
-   pop correctly.
-2. **The machine form does not scroll.** It is a non-scrolling `Column` where
-   the image preview absorbs the leftover height. With the keyboard open and a
-   large system font the fixed blocks (title, name field, dropdown, actions)
-   could exceed the viewport and be pushed out of view. Fallback: make the field
-   block scrollable and keep only the actions row pinned.
 
 ## Cautions
 

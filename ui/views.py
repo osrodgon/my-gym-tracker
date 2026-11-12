@@ -77,13 +77,23 @@ class GymAppView(ft.Column):
         self.page.update()
 
     def _on_machines_edit_mode_changed(self, editing: bool) -> None:
-        """Hide the Máquinas FAB while its in-tab form is open."""
-        if self._selected_section != 2:
-            return
-        self.page.floating_action_button = (
-            None if editing else self._machines_tab.fab
-        )
+        """Hide the Máquinas FAB while its in-tab form is open.
+
+        The Android back gesture is intercepted only while editing, so on the
+        list it keeps its native behaviour of leaving the app.
+        """
+        self.page.views[0].can_pop = not editing
+        if self._selected_section == 2:
+            self.page.floating_action_button = (
+                None if editing else self._machines_tab.fab
+            )
         self.page.update()
+
+    async def on_confirm_pop(self, e) -> None:
+        """Handle the Android back gesture while the machine form is open."""
+        if self._machines_tab.is_editing:
+            self._machines_tab.reset()
+        await e.control.confirm_pop(False)
 
     def _sync_floating_action_button(self) -> None:
         """Show each tab's FAB only while that tab is selected."""

@@ -40,7 +40,15 @@ DIALOG_BUTTON_PADDING = ft.Padding.symmetric(
     horizontal=dp(12), vertical=dp(10)
 )
 DIALOG_ACTIONS_PADDING = dp(24)
+SHEET_PADDING = ft.Padding.only(
+    left=dp(16), right=dp(16), top=dp(16), bottom=dp(32)
+)
+"""Bottom sheets render outside the page's SafeArea, so the extra bottom inset
+keeps the actions clear of Android's system navigation bar."""
 BUTTON_ICON_SIZE = dp(24)
+LIST_ICON_SIZE = 24
+"""Leading icon in list rows. Not scaled: the IconButton beside it keeps
+Flutter's fixed 24dp icon box, so a scaled icon would look oversized."""
 MENU_PADDING = ft.Padding.symmetric(vertical=dp(8))
 MENU_ITEM_PADDING = ft.Padding.symmetric(
     horizontal=dp(12), vertical=dp(14)
