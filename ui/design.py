@@ -24,7 +24,7 @@ hue; the scheme, the nav bar and the input focus colour follow from it."""
 SURFACE_PANEL_COLOR = ft.Colors.SURFACE_CONTAINER
 """Tonal surface shared by the bottom `NavigationBar`, the latest-record banner
 and the machine image card, so the three read as the same layer."""
-IMAGE_OPACITY = 0.70
+IMAGE_OPACITY = 0.75
 """Opacity of the large machine illustrations (Registrar card and the machine
 form preview). 0.75 keeps the drawing readable over the tonal surface while
 softening it; lower it for a fainter illustration."""

@@ -34,8 +34,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   `SURFACE_PANEL_COLOR`, `IMAGE_OPACITY`, radii, padding and type sizes. Every
   shape/size in the app derives from here.
 - `ui/utils.py` — `ButtonStyles`, `create_dropdown`, `create_text_field`,
-  `_DialogsMixin` (`_show_snackbar`, `_show_error`, `_show_message_dialog`),
-  `format_date`, `format_weight`, `format_series`, `is_dark_theme`.
+  `FixedHeightArea` (card area that keeps its measured height), `_DialogsMixin`
+  (`_show_snackbar`, `_show_error`, `_show_message_dialog`), `format_date`,
+  `format_weight`, `format_series`, `is_dark_theme`.
 - `database.py` — `GymDatabase`: `get_summary`, `get_machines`, `get_usage_history`,
   `get_latest_usage`, `log_use`, `update_usage`, `add_machine`, `rename_machine`,
   `delete_machine`, `delete_usage`, `replace_data`.
@@ -66,13 +67,12 @@ SQLite persistence. Flet docs: https://flet.dev.
   swaps `panel.content` between `_list_view` and the form, reports the mode via
   `on_edit_mode_changed` so `GymAppView` hides the FAB, and `reset()` restores
   the list (the view calls it on every nav change). The form is a `Column` with
-  a scrollable field block (title, name, dropdown, preview) and the actions
-  pinned below it, so the buttons stay reachable with the keyboard open: a
-  `ResponsiveRow` with `col={"xs": 12, "sm": 6}`, both `styles.primary` so they
-  match in size, full width and stacked on xs, side by side from `sm`. The
-  preview sits on the same tonal card as the Registrar image and is the flexible
-  child of the field block (`expand=True`, no `aspect_ratio`, no scroll), so it
-  absorbs the free height and shrinks with it when the keyboard opens. Android
+  a field block (title, name, dropdown, preview) and the actions pinned below it,
+  so the buttons stay reachable with the keyboard open: a `ResponsiveRow` with
+  `col={"xs": 12, "sm": 6}`, both `styles.primary` so they match in size, full
+  width and stacked on xs, side by side from `sm`. The preview sits on the same
+  tonal card as the Registrar image, inside the same `FixedHeightArea`, so it
+  keeps its size when the keyboard opens instead of shrinking. Android
   back closes
   the form instead of leaving the app: `GymAppView` sets
   `page.views[0].can_pop` to `not editing` and resolves the gesture in
@@ -125,19 +125,37 @@ SQLite persistence. Flet docs: https://flet.dev.
   `Text.spans`: replacing rich-text spans on an update left the banner blank in
   Flet 1.0.5. The fresh control renders fine and still wraps to a second line,
   because the slot sits in a `Row` with `expand=True`.
-- The Registrar image card is the flexible child of the tab's `Column`
-  (`expand=True`, not `aspect_ratio`): it absorbs whatever height the fields and
-  the save button leave free, so no dead gap opens above the button. It shrinks
-  with the rest of the layout when the Android keyboard opens; keeping its size
-  was tried with measured and page-derived heights, and both looked worse than
-  the flex. The card is always visible and always shows a picture — the generic
-  one before a machine is picked, and the generic one too when the chosen
-  machine has no drawing.
+- The Registrar image card and the machine form preview never shrink. Both sit
+  inside `ui.utils.FixedHeightArea`, the flexible child of their `Column`: a
+  clipping `ft.Stack` whose only child is positioned to all four edges, so it
+  fills the area from the first frame; the area's `on_size_change` then copies
+  the measured height onto the card, unpinning its `bottom`. The height only
+  grows, each burst is debounced (the first frames and the keyboard animation
+  report intermediate values) and nothing is applied while
+  `page.media.view_insets.bottom > 0`, so the keyboard shrinks the area and the
+  area clips the card instead of squeezing it, while the rows below (Registrar
+  fields and save button, form actions) stay pinned and reachable. A `Stack` is
+  required: inside a `Container` the child is clamped to the parent's height and
+  a fixed height would not survive the keyboard. No arithmetic with
+  `page.height`. The card is always visible and always shows a picture — the
+  generic one before a machine is picked, and the generic one too when the
+  chosen machine has no drawing.
+- Accepted consequences of that fixed height (not bugs to fix): the card keeps
+  its size when the window shrinks (rotation, desktop resize) instead of
+  recalculating, so it gets clipped; and a header that grows at runtime (a
+  two-line banner, or the machine dropdown's `error_text`) shrinks the area and
+  clips more of the drawing. The rows below stay reachable in both cases.
+- Both cards are rebuilt when needed: the Registrar one once per session, the
+  form preview on every open, so each gets its own measurement.
 - Swiping the image card moves through the list it belongs to: in Registrar it
   selects the previous/next machine (the dropdown order), and in the create/rename
   form it changes the image dropdown (including "Sin imagen"). Both wrap around,
   and both are `ft.GestureDetector(on_horizontal_drag_end=...)` with a
   `_SWIPE_VELOCITY` threshold so a stray drag does not switch anything.
+  Changing the dropdown from code must also call `image_dropdown.update()`:
+  assigning `value` alone leaves the field label showing the previous option
+  until the widget is touched again, which is why the form routes every programmatic
+  change through `_select_image()`.
 - FABs are page-level controls (`page.floating_action_button`, shown above
   `page.navigation_bar`), not part of a tab panel. `GymAppView` assigns the
   selected tab's `fab` in `_sync_floating_action_button()` (Historial, Máquinas)

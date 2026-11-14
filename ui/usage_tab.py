@@ -14,6 +14,7 @@ from ui import design
 from ui.texts import COMMON, USAGE, ERRORS
 from ui.utils import (
     ButtonStyles,
+    FixedHeightArea,
     _DialogsMixin,
     create_dropdown,
     create_text_field,
@@ -37,7 +38,6 @@ class UsageTab(_DialogsMixin):
       panel          – ft.Container to embed in the navigation scaffold.
       update_options – call after machines list changes.
       reset          – call when navigating back to this tab.
-      on_brightness_change – call when system brightness changes.
     """
 
     def __init__(self, db, styles: ButtonStyles, on_refresh):
@@ -92,11 +92,10 @@ class UsageTab(_DialogsMixin):
             expand=True,
             opacity=design.IMAGE_OPACITY,
         )
-        # Highlighted surface that holds the machine drawing. It takes all the
-        # vertical space the fields and the save button leave free; when the
-        # Android keyboard opens it shrinks with the rest of the layout.
+        # Highlighted surface that holds the machine drawing. It sits in a
+        # `FixedHeightArea` (see `_build_panel`), so the card keeps its size
+        # instead of shrinking when the Android keyboard opens.
         self._image_card = ft.Container(
-            expand=True,
             bgcolor=design.SURFACE_PANEL_COLOR,
             border_radius=design.IMAGE_CARD_RADIUS,
             padding=design.IMAGE_CARD_PADDING,
@@ -205,6 +204,16 @@ class UsageTab(_DialogsMixin):
                 self._reps_input,
             ],
         )
+        # The card lives in a fixed-height area (`FixedHeightArea`): a clipping
+        # `Stack` that takes the height the header, the fields and the button
+        # leave free and keeps the card at its measured size, so the keyboard
+        # clips it instead of squeezing it and the rows below stay reachable.
+        # Swiping the card moves to the previous/next machine.
+        self._image_wrapper = ft.GestureDetector(
+            on_horizontal_drag_end=self._on_swipe,
+            content=self._image_card,
+        )
+        self._card_area = FixedHeightArea(self._image_wrapper)
         return ft.Container(
             expand=True,
             padding=0,
@@ -213,15 +222,7 @@ class UsageTab(_DialogsMixin):
                 spacing=design.dp(12),
                 controls=[
                     header_row,
-                    # The card is the flexible child of the column: it absorbs
-                    # whatever height the fields and the button leave free, so
-                    # the form has no dead gap above the save button. Swiping it
-                    # horizontally moves to the previous/next machine.
-                    ft.GestureDetector(
-                        expand=True,
-                        on_horizontal_drag_end=self._on_swipe,
-                        content=self._image_card,
-                    ),
+                    self._card_area,
                     inputs_row,
                     ft.Container(
                         padding=ft.Padding.only(bottom=design.dp(8)),
