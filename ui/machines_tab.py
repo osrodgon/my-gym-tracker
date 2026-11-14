@@ -12,6 +12,7 @@ from ui import design
 from ui.texts import COMMON, MACHINES, ERRORS
 from ui.utils import (
     ButtonStyles,
+    FixedHeightArea,
     _DialogsMixin,
     create_dropdown,
     create_text_field,
@@ -198,8 +199,8 @@ class MachinesTab(_DialogsMixin):
             expand=True,
             opacity=design.IMAGE_OPACITY,
         )
-        # Same tonal card as the Registrar image: it takes the height the fields
-        # and the form actions leave free, and shrinks with them when the Android
+        # Same tonal card as the Registrar image: it lives in a fixed-height
+        # area, so it keeps its size instead of shrinking when the Android
         # keyboard opens.
         image_preview_container = ft.Container(
             expand=True,
@@ -209,8 +210,6 @@ class MachinesTab(_DialogsMixin):
             padding=design.IMAGE_CARD_PADDING,
             content=image_preview,
         )
-
-        # --- Card sizing: measure the fixed rows once, then fix the height. ---
 
         def _apply_preview(selected_key: str | None) -> None:
             # `ft.Image.color` blends every pixel with that colour and would
@@ -231,6 +230,14 @@ class MachinesTab(_DialogsMixin):
             _apply_preview(selected_key if has_image else None)
             image_preview_container.update()
 
+        def _select_image(key: str) -> None:
+            # Assigning `value` alone leaves the label stale in Flet 1.0.5:
+            # the widget must be updated too, or the dropdown keeps showing
+            # the previous image until it is touched again.
+            image_dropdown.value = key
+            image_dropdown.update()
+            _update_image_preview()
+
         def _on_swipe_image(e) -> None:
             """Move to the previous/next image of the catalog, wrapping around."""
             velocity = e.primary_velocity or 0
@@ -246,8 +253,7 @@ class MachinesTab(_DialogsMixin):
             else:
                 index = (index - 1) % len(options)
 
-            image_dropdown.value = options[index]
-            _update_image_preview()
+            _select_image(options[index])
 
         _apply_preview(
             initial_image_key if initial_image_key is not None else None
@@ -262,12 +268,11 @@ class MachinesTab(_DialogsMixin):
             new_key = get_machine_image_key(name_input.value or "")
             if new_key is not None:
                 automatic_image_key = new_key
-                image_dropdown.value = new_key
-                _update_image_preview()
+                if image_dropdown.value != new_key:
+                    _select_image(new_key)
             elif image_dropdown.value == automatic_image_key:
                 automatic_image_key = None
-                image_dropdown.value = "none"
-                _update_image_preview()
+                _select_image("none")
 
         name_input.on_change = _handle_name_change
 
@@ -303,8 +308,15 @@ class MachinesTab(_DialogsMixin):
         heading = (
             MACHINES["create_heading"] if is_new else MACHINES["rename_heading"]
         )
-        # No scroll on the field block: the preview card is the flexible child
-        # and absorbs the free height, exactly like the Registrar image card.
+        # No scroll on the field block: the preview area is the flexible child
+        # and keeps the card at its measured height, exactly like the Registrar
+        # image card (see `FixedHeightArea`).
+        preview_area = FixedHeightArea(
+            ft.GestureDetector(
+                on_horizontal_drag_end=_on_swipe_image,
+                content=image_preview_container,
+            )
+        )
         fields = ft.Column(
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
@@ -317,11 +329,7 @@ class MachinesTab(_DialogsMixin):
                 ),
                 name_input,
                 ft.Row(controls=[image_dropdown]),
-                ft.GestureDetector(
-                    expand=True,
-                    on_horizontal_drag_end=_on_swipe_image,
-                    content=image_preview_container,
-                ),
+                preview_area,
             ],
         )
         form = ft.Column(

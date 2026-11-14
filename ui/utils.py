@@ -1,4 +1,5 @@
 import flet as ft
+import asyncio
 from datetime import date
 
 from ui import design
@@ -69,6 +70,96 @@ def create_text_field(**kwargs) -> ft.TextField:
     # Half-width fields need room for the Spanish error text without ellipsis.
     kwargs.setdefault("error_max_lines", 3)
     return ft.TextField(**kwargs)
+
+
+_FIT_DELAY = 0.15
+"""Seconds to wait before applying a measured card height.
+
+`on_size_change` reports every intermediate layout: the first frames carry a
+provisional safe area, the navigation bar and text metrics, and the keyboard
+runs an animation. Only the last value of each burst is applied.
+"""
+
+
+class FixedHeightArea(ft.Stack):
+    """Clipping area that keeps a flexible card at the height it filled.
+
+    Use it as the flexible child of a `Column` that also holds fixed rows (the
+    Registrar fields and save button, the machine form actions). The card is
+    pinned to all four edges, so it fills the area from the first frame; the
+    measured height is then applied to the card, which only ever grows. When
+    the Android keyboard shrinks the panel, the area gets smaller and clips the
+    card instead of squeezing it, so the fixed rows stay on screen and
+    reachable. Nothing is applied while `page.media.view_insets.bottom > 0`
+    either, as a second guard on platforms that report the keyboard there.
+
+    A `Stack` is required: inside a `Container` the child is clamped to the
+    parent's height, so a fixed height could never survive the keyboard.
+    """
+
+    def __init__(self, child: ft.Control):
+        super().__init__(expand=True, on_size_change=self._on_size_change)
+        child.left = 0
+        child.top = 0
+        child.right = 0
+        child.bottom = 0
+        self.controls = [child]
+        self._card = child
+        self._card_height: float | None = None
+        self._area_height: float | None = None
+        self._fit_generation = 0
+
+    @property
+    def _mounted_page(self) -> ft.Page | None:
+        """The page, or `None` if the area is detached.
+
+        `Control.page` raises instead of returning `None` when the control is
+        not in a page tree, which happens if the machine form is closed while a
+        debounced measurement is still pending.
+        """
+        try:
+            return self.page
+        except RuntimeError:
+            return None
+
+    def _on_size_change(self, e) -> None:
+        """Track the height of the free area and debounce its application.
+
+        The area is the flexible child of the column that hosts it, so its
+        height is exactly the space the fixed rows leave free; no arithmetic
+        with `page.height` is needed.
+        """
+        if e.height <= 0:
+            return
+        self._area_height = e.height
+        page = self._mounted_page
+        if page is None:
+            return
+        self._fit_generation += 1
+        page.run_task(self._apply_height, self._fit_generation)
+
+    async def _apply_height(self, generation: int) -> None:
+        """Give the card the last measured height, once the layout settled.
+
+        Only the newest burst is applied (`generation`) and the height only
+        grows, so the keyboard cannot shrink the card.
+        """
+        await asyncio.sleep(_FIT_DELAY)
+        page = self._mounted_page
+        if page is None:
+            return
+        if generation != self._fit_generation or self._area_height is None:
+            return
+        if page.media.view_insets.bottom > 0:
+            return
+        if self._area_height <= (self._card_height or 0):
+            return
+        self._card_height = self._area_height
+        # Unpin the bottom edge: with both `top` and `bottom` set, `height` is
+        # ignored and the card would shrink with the area again.
+        self._card.bottom = None
+        self._card.height = self._area_height
+        self.update()
 
 
 class ButtonStyles:
