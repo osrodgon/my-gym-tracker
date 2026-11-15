@@ -119,6 +119,19 @@ class GymAppView(ft.Column):
         fabs = {1: self._history_tab.fab, 2: self._machines_tab.fab}
         self.page.floating_action_button = fabs.get(self._selected_section)
 
+    def refresh_theme(self) -> None:
+        """Reapply the values that are not Material scheme roles.
+
+        The machine illustrations use an opacity, a plain number, so Flet does
+        not repaint them on its own when the theme changes. Called at startup,
+        after every data refresh and from the platform brightness handler.
+        """
+        if self.parent is None:
+            return
+        self._usage_tab.apply_theme()
+        self._machines_tab.apply_theme()
+        self.update()
+
     # ------------------------------------------------------------------
     # Data refresh
     # ------------------------------------------------------------------
@@ -137,4 +150,4 @@ class GymAppView(ft.Column):
         self._usage_tab.reset()
 
         if self.page is not None:
-            self.update()
+            self.refresh_theme()

@@ -142,8 +142,20 @@ fi
 ln -s "usr/share/applications/$ID.desktop" "$APPDIR/$ID.desktop"
 ln -s "$ID.png" "$APPDIR/.DirIcon"
 
-printf '#!/bin/sh\nHERE=$(dirname "$(readlink -f "$0")")\nexec "$HERE/usr/bin/%s" "$@"\n' \
-    "$APP" > "$APPDIR/AppRun"
+cat > "$APPDIR/AppRun" <<EOF
+#!/bin/sh
+# Flet's desktop runner treats any command-line argument as developer mode: it
+# reads it as the URL of a running server and never starts the bundled Python,
+# which leaves a blank window. Hand the arguments to the app through the
+# environment instead; app_options.parse_args() reads GYMTRACKER_ARGS, one
+# argument per line.
+HERE=\$(dirname "\$(readlink -f "\$0")")
+if [ \$# -gt 0 ]; then
+    GYMTRACKER_ARGS=\$(printf '%s\n' "\$@")
+    export GYMTRACKER_ARGS
+fi
+exec "\$HERE/usr/bin/$APP"
+EOF
 chmod +x "$APPDIR/AppRun"
 
 rm -f -- "$OUTPUT"

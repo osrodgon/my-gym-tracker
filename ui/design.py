@@ -24,10 +24,21 @@ hue; the scheme, the nav bar and the input focus colour follow from it."""
 SURFACE_PANEL_COLOR = ft.Colors.SURFACE_CONTAINER
 """Tonal surface shared by the bottom `NavigationBar`, the latest-record banner
 and the machine image card, so the three read as the same layer."""
-IMAGE_OPACITY = 0.75
+IMAGE_OPACITY_LIGHT = 0.75
 """Opacity of the large machine illustrations (Registrar card and the machine
-form preview). 0.75 keeps the drawing readable over the tonal surface while
-softening it; lower it for a fainter illustration."""
+form preview) in the light theme. 0.75 keeps the drawing readable over the
+tonal surface while softening it; lower it for a fainter illustration."""
+
+IMAGE_OPACITY_DARK = 0.55
+"""Opacity of the same illustrations in the dark theme. The drawings are
+mid-grey, so on the dark tonal surface the light theme's 0.75 makes them stand
+out too much; 0.55 sinks them into the card while keeping the shapes legible.
+Lower it further for a fainter drawing."""
+
+
+def image_opacity(is_dark: bool) -> float:
+    """Opacity of the large machine illustrations for the current theme."""
+    return IMAGE_OPACITY_DARK if is_dark else IMAGE_OPACITY_LIGHT
 NO_SELECTION_IMAGE_SCALE = 0.78
 """Scale applied to the generic empty-state picture. It is a tall, tightly
 framed drawing, so it fills the card and looks oversized next to the machine

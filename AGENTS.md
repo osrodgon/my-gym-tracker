@@ -15,9 +15,20 @@ SQLite persistence. Flet docs: https://flet.dev.
 ## Layout
 
 - `main.py` — entry point. Builds the light/dark `Theme` from `ui/design.py`
-  tokens, sets `page.title`, window size, appends the `FilePicker` service,
-  mounts `GymAppView` in a `SafeArea`, attaches `page.navigation_bar`, then calls
-  `update_data()`.
+  tokens, applies the theme mode and window size resolved by
+  `app_options.parse_args()`, sets `page.title`, appends the `FilePicker`
+  service, mounts `GymAppView` in a `SafeArea`, attaches
+  `page.navigation_bar`, then calls `update_data()`.
+- `app_options.py` — `AppOptions` + `parse_args()`: `--theme`
+  (`system`/`light`/`dark`, default `system`) and `--size`
+  (`pixel-7-pro` → 412×892, `pixel-10` → 412×923, default 540×960). The
+  presets are the phones' *logical* viewports (dp), not their physical
+  resolution: only the starting window size changes, and the window stays
+  resizable like the default preview. Values are matched case- and
+  separator-insensitively, so `"Pixel 7 Pro"`, `pixel_7_pro` and
+  `pixel-7-pro` all work. Flags, values and `--help` text are English even
+  though the UI is Spanish: they are a developer-facing CLI, not part of
+  `ui/texts.py`.
 - `ui/views.py` — `GymAppView(ft.Column)`: builds the 3-tab scaffold, swaps tab
   panels on nav change, hides the Máquinas FAB while its form is open, and
   exposes `update_data()` which pushes fresh DB rows into all tabs.
@@ -31,7 +42,8 @@ SQLite persistence. Flet docs: https://flet.dev.
   `SERIES`, `USAGE`, `HISTORY`, `MACHINES`, `IMPORT`, `EXPORT`, `ERRORS`, `DATE`).
   Never hardcode UI text.
 - `ui/design.py` — Material 3 tokens: `SCALE`, `dp()`, `SEED_COLOR`,
-  `SURFACE_PANEL_COLOR`, `IMAGE_OPACITY`, radii, padding and type sizes. Every
+  `SURFACE_PANEL_COLOR`, `IMAGE_OPACITY_LIGHT` / `IMAGE_OPACITY_DARK` with
+  `image_opacity(is_dark)`, radii, padding and type sizes. Every
   shape/size in the app derives from here.
 - `ui/utils.py` — `ButtonStyles`, `create_dropdown`, `create_text_field`,
   `FixedHeightArea` (card area that keeps its measured height), `_DialogsMixin`
@@ -56,6 +68,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   it in the same change whenever user-visible behaviour, requirements, commands,
   build flow, data rules or supported platforms change. Don't leave it stale;
   `AGENTS.md` stays the internal source of truth for pending work and conventions.
+- Anything that lives on GitHub — issue titles and bodies, pull requests, commit
+  messages, review comments — is written in English, even though the UI and
+  `README.md` are Spanish.
 - Mobile-first: vertical touch layout, `ft.ListView` or
   `ft.Column(scroll=ft.ScrollMode.AUTO)`, generous tap targets. The root is already
   wrapped in `ft.SafeArea` in `main.py`.
@@ -92,6 +107,15 @@ SQLite persistence. Flet docs: https://flet.dev.
   or `dir(ft)`. This project pins 1.0.5 and uses the newer APIs (`ft.Icons`,
   `ft.Colors`, `page.show_dialog`, `ft.run`). Read the installed source rather than
   trusting memory when a name is uncertain.
+- Command-line arguments cannot be passed straight to the binary: Flet's
+  desktop runner treats *any* argument as developer mode (it reads `argv[0]` as
+  the URL of a running server) and never starts the bundled Python, which
+  leaves a blank window. `build.sh`'s `AppRun` therefore puts the AppImage's
+  arguments in `GYMTRACKER_ARGS`, one per line, and execs the app with none;
+  `app_options._app_argv()` reads that variable and then `sys.argv`, dropping
+  the script path that `python main.py`/`flet run` leave at index 0, so an
+  explicit argument still wins over the env. Parse them in `main.py`'s
+  `__main__` block only, so `python -c "import main"` stays argument-free.
 - Dropdowns and text fields are built with `ui.utils.create_dropdown()` and
   `ui.utils.create_text_field()`, which set the field border, content padding,
   menu height, `expanded_insets=0`, the read-only M3 selector behaviour and the
@@ -140,6 +164,19 @@ SQLite persistence. Flet docs: https://flet.dev.
   `page.height`. The card is always visible and always shows a picture — the
   generic one before a machine is picked, and the generic one too when the
   chosen machine has no drawing.
+- The drawings' opacity depends on the theme: `design.image_opacity()` returns
+  `IMAGE_OPACITY_LIGHT` (0.75) or `IMAGE_OPACITY_DARK` (0.55), because the
+  mid-grey illustrations stand out too much on the dark tonal surface at the
+  light value. It is a number, not a scheme role, so Flet does not repaint it
+  on its own: `GymAppView.refresh_theme()` reassigns it on both the Registrar
+  image and an open form preview, and runs from `update_data()`, so a live
+  change is seen wherever the user is. `main.py` wires
+  `page.on_platform_brightness_change` to it for the OS/Android dark mode.
+  `ui.utils.is_dark_theme(page)` resolves the effective brightness: the
+  `--theme` mode wins over `page.platform_brightness`, so forcing `dark` on a
+  light system still uses the dark opacity. Both tab `apply_theme()` helpers
+  bail out when their panel has no parent, because `control.page` raises on an
+  unmounted control instead of returning `None`.
 - Accepted consequences of that fixed height (not bugs to fix): the card keeps
   its size when the window shrinks (rotation, desktop resize) instead of
   recalculating, so it gets clipped; and a header that grows at runtime (a
@@ -200,13 +237,12 @@ finish or discover something instead of creating other status docs.
    by `save_file`, so a cancel looks like a success.
 5. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-6. Brightness changes repaint only the usage-tab preview; an open machine form
+6. A live theme change reapplies only the image opacity: an open machine form
    keeps stale colours in its SVG preview and row icons until the next render.
 7. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
    silently falls back to `assets/icon.png`.
 8. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
    are still hardcoded in `xlsx_import.py` instead of `IMPORT`.
-9. `main.py` calls the private `GymAppView._on_platform_brightness_change`.
 
 ## Cautions
 

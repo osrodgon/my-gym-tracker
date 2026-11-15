@@ -33,6 +33,21 @@ def format_series(weight: float, reps: int | None) -> str:
     )
 
 
+def is_dark_theme(page: ft.Page) -> bool:
+    """Whether the UI is rendering the dark theme right now.
+
+    With `--theme light|dark` the page's theme mode wins over the system
+    setting; with `system` (the default) the host platform's brightness
+    decides, which on Android is the phone's dark mode and in a browser the
+    `prefers-color-scheme` media query.
+    """
+    if page.theme_mode == ft.ThemeMode.DARK:
+        return True
+    if page.theme_mode == ft.ThemeMode.LIGHT:
+        return False
+    return page.platform_brightness == ft.Brightness.DARK
+
+
 def create_dropdown(**kwargs) -> ft.Dropdown:
     """Create an exposed dropdown with the app's shared Material 3 styling.
 

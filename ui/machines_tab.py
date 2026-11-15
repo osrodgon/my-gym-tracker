@@ -16,6 +16,7 @@ from ui.utils import (
     _DialogsMixin,
     create_dropdown,
     create_text_field,
+    is_dark_theme,
 )
 
 _SWIPE_VELOCITY = 400
@@ -43,6 +44,7 @@ class MachinesTab(_DialogsMixin):
         self._on_refresh = on_refresh
         self._on_edit_mode_changed = on_edit_mode_changed
         self._form_open = False
+        self._image_preview: ft.Image | None = None
 
         self._machine_list = ft.ListView(
             expand=True,
@@ -140,6 +142,17 @@ class MachinesTab(_DialogsMixin):
         if self._form_open:
             self._close_machine_form()
 
+    def apply_theme(self) -> None:
+        """Match the form preview's opacity to the current theme.
+
+        The preview is rebuilt every time the form opens, so it only needs a
+        nudge while the form is already on screen and the theme changes.
+        """
+        if self._image_preview is not None and self.panel.parent is not None:
+            self._image_preview.opacity = design.image_opacity(
+                is_dark_theme(self.panel.page)
+            )
+
     @property
     def is_editing(self) -> bool:
         """True while the create/rename form replaces the list."""
@@ -197,8 +210,9 @@ class MachinesTab(_DialogsMixin):
             src="",
             fit=ft.BoxFit.CONTAIN,
             expand=True,
-            opacity=design.IMAGE_OPACITY,
+            opacity=design.IMAGE_OPACITY_LIGHT,
         )
+        self._image_preview = image_preview
         # Same tonal card as the Registrar image: it lives in a fixed-height
         # area, so it keeps its size instead of shrinking when the Android
         # keyboard opens.
@@ -363,6 +377,7 @@ class MachinesTab(_DialogsMixin):
             content=form,
         )
         self._form_open = True
+        self.apply_theme()
         if self._on_edit_mode_changed is not None:
             self._on_edit_mode_changed(True)
         elif self.panel.page is not None:
@@ -372,6 +387,7 @@ class MachinesTab(_DialogsMixin):
         if not self._form_open:
             return
         self._form_open = False
+        self._image_preview = None
         self.panel.content = self._list_view
         if self._on_edit_mode_changed is not None:
             self._on_edit_mode_changed(False)
