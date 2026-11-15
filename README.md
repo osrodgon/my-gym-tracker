@@ -12,7 +12,7 @@ Está pensada para usarse en el móvil, en el propio gimnasio, con controles y t
 - **Historial**: registros agrupados por máquina en tarjetas expandibles, ordenados del más reciente al más antiguo, con borrado individual.
 - **Exportar e importar Excel**: desde el menú de opciones del historial. La exportación genera un `.xlsx` y la importación sustituye todos los datos actuales (ver [Datos](#datos)).
 - **Gestión de máquinas**: crea, renombra y elimina máquinas. Al escribir el nombre se sugiere una imagen WebP, que puedes cambiar o quitar desde el desplegable del formulario, o deslizando la imagen hacia los lados.
-- **Tema claro/oscuro**: se adapta automáticamente al tema del sistema.
+- **Tema claro/oscuro**: se adapta automáticamente al tema del sistema; con `--theme` se puede forzar claro u oscuro.
 - **Interfaz en español**: todos los textos visibles están en español.
 
 ## Requisitos
@@ -46,6 +46,36 @@ Para abrirla en una ventana de escritorio durante el desarrollo:
 flet run main.py
 ```
 
+### Parámetros de arranque
+
+La app acepta dos parámetros opcionales, tanto en desarrollo como en el AppImage ya compilado:
+
+| Parámetro | Valores | Por defecto |
+|---|---|---|
+| `--theme` | `system`, `light`, `dark` | `system` |
+| `--size` | `pixel-7-pro`, `pixel-10` | `540x960` |
+
+```bash
+./build/gymtracker-<versión>-x86_64.AppImage --theme dark --size "Pixel 7 Pro"
+```
+
+El lanzador del AppImage recoge los parámetros y los pasa a la app mediante la variable `GYMTRACKER_ARGS` (un argumento por línea). Así tiene que ser: el binario de Flet interpreta cualquier argumento como modo desarrollador, espera que sea la URL de un servidor ya en marcha y no arranca el Python incluido, por lo que la ventana queda en blanco. Si ejecutás el binario sin empaquetar (`build/linux/gymtracker`), usá esa misma variable:
+
+```bash
+GYMTRACKER_ARGS=$(printf '%s\n' --theme dark --size "Pixel 7 Pro") \
+    ./build/linux/gymtracker
+```
+
+`--size` usa el tamaño lógico (dp) del móvil, no su resolución física: la ventana tiene el mismo ancho de 412 dp que la app en el teléfono (`412x892` en el Pixel 7 Pro, `412x923` en el Pixel 10). Sin el parámetro se mantiene la ventana de `540x960` que no corresponde a ningún móvil real.
+
+`--size` solo cambia el tamaño inicial de la ventana; después se redimensiona como cualquier ventana de escritorio.
+
+Con `flet run`, los parámetros van detrás de `--` para que no los interprete Flet:
+
+```bash
+flet run main.py -- --theme light
+```
+
 ## Uso
 
 La app tiene tres pestañas:
@@ -70,6 +100,7 @@ El botón flotante de **Historial** abre las opciones de Excel y el de **Máquin
 
 ```text
 ├── main.py               # Punto de entrada de la aplicación
+├── app_options.py        # Parámetros de arranque (tema y tamaño de ventana)
 ├── database.py           # Capa de acceso a datos (SQLite)
 ├── machine_images.py     # Mapeo de nombres de máquina a imágenes WebP
 ├── xlsx_export.py        # Exportación del historial a Excel

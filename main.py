@@ -1,4 +1,5 @@
 import flet as ft
+from app_options import AppOptions, parse_args
 from database import GymDatabase
 from ui import design
 from ui.views import GymAppView
@@ -65,9 +66,10 @@ def _build_theme(color: str) -> ft.Theme:
     )
 
 
-def main(page: ft.Page):
-    # Set the theme mode to system default (light/dark)
-    page.theme_mode = ft.ThemeMode.SYSTEM
+def main(page: ft.Page, options: AppOptions):
+    # Theme and window size come from the command line (see app_options.py);
+    # without arguments this is the system theme and a 540x960 window.
+    page.theme_mode = options.theme_mode
 
     # Light and dark themes built from the same Material 3 tokens. Text colour
     # is the scheme's onSurface role, so M3 resolves the contrast per theme.
@@ -78,8 +80,8 @@ def main(page: ft.Page):
     page.title = NAVIGATION["app_name"]
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 540
-    page.window.height = 960
+    page.window.width = options.window_width
+    page.window.height = options.window_height
 
     db = GymDatabase()
     
@@ -100,5 +102,16 @@ def main(page: ft.Page):
     page.views[0].on_confirm_pop = app_view.on_confirm_pop
     app_view.update_data()  # Initial call to load data when starting the application
 
+    # The machine drawings fade with an opacity, which Flet does not repaint on
+    # its own when the theme changes (unlike a scheme colour), so a live switch
+    # of the OS theme has to reapply it. Android's dark mode arrives here too.
+    page.on_platform_brightness_change = lambda e: app_view.refresh_theme()
+
 if __name__ == "__main__":
-    ft.run(main, view=ft.AppView.WEB_BROWSER, port=8550, host="0.0.0.0")
+    options = parse_args()
+    ft.run(
+        lambda page: main(page, options),
+        view=ft.AppView.WEB_BROWSER,
+        port=8550,
+        host="0.0.0.0",
+    )

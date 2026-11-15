@@ -19,6 +19,7 @@ from ui.utils import (
     create_dropdown,
     create_text_field,
     format_series,
+    is_dark_theme,
 )
 
 
@@ -90,7 +91,7 @@ class UsageTab(_DialogsMixin):
             src="",
             fit=ft.BoxFit.CONTAIN,
             expand=True,
-            opacity=design.IMAGE_OPACITY,
+            opacity=design.IMAGE_OPACITY_LIGHT,
         )
         # Highlighted surface that holds the machine drawing. It sits in a
         # `FixedHeightArea` (see `_build_panel`), so the card keeps its size
@@ -138,6 +139,19 @@ class UsageTab(_DialogsMixin):
     # ------------------------------------------------------------------
     # Public interface
     # ------------------------------------------------------------------
+
+    def apply_theme(self) -> None:
+        """Match the illustration opacity to the current theme.
+
+        The opacity is a number, not a scheme role, so Flet does not repaint it
+        when the theme changes; `GymAppView` calls this after a brightness
+        change and on every data refresh.
+        """
+        if self.panel.parent is None:
+            return
+        self._machine_image.opacity = design.image_opacity(
+            is_dark_theme(self.panel.page)
+        )
 
     def update_options(self, machines) -> None:
         self._machine_image_keys = {
