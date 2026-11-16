@@ -28,7 +28,7 @@ def _cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
         try:
             return shared_strings[int(value)]
         except (ValueError, IndexError) as exc:
-            raise ValueError("El archivo contiene una cadena de Excel no válida.") from exc
+            raise ValueError(IMPORT["invalid_shared_string"]) from exc
 
     return value
 
@@ -46,7 +46,8 @@ def _parse_excel_date(value: str) -> str:
             raise ValueError
         return (datetime(1899, 12, 30) + timedelta(days=serial)).date().isoformat()
     except (ValueError, OverflowError) as exc:
-        raise ValueError(f"Fecha no válida: {value}") from exc
+        # The import loop replaces this message with the machine-aware one.
+        raise ValueError from exc
 
 
 def _parse_reps(value: str, machine_name: str) -> int:
@@ -108,17 +109,15 @@ def parse_usage_workbook(
                     for item in shared_root.findall(f"{{{_NS}}}si")
                 ]
     except (BadZipFile, KeyError, ET.ParseError) as exc:
-        raise ValueError(
-            "El archivo no es un Excel válido exportado desde la aplicación."
-        ) from exc
+        raise ValueError(IMPORT["invalid_file"]) from exc
 
     sheet_data = worksheet.find(f"{{{_NS}}}sheetData")
     if sheet_data is None:
-        raise ValueError("El Excel no contiene una hoja de datos válida.")
+        raise ValueError(IMPORT["invalid_sheet"])
 
     rows = sheet_data.findall(f"{{{_NS}}}row")
     if not rows:
-        raise ValueError("El Excel está vacío.")
+        raise ValueError(IMPORT["empty_workbook"])
 
     def read_row(row: ET.Element) -> dict[str, str]:
         values = {}

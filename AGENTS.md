@@ -254,8 +254,6 @@ too whenever you are asked what is pending.
    by `save_file`, so a cancel looks like a success.
 2. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-3. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
-   are still hardcoded in `xlsx_import.py` instead of `IMPORT`.
 
 ## Cautions
 
