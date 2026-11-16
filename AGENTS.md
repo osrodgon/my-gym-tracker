@@ -247,12 +247,8 @@ light/dark text themes (15–27.5px). Every token scales from `SCALE = 1.25` in
 This section is the single source of truth for pending work — update it when you
 finish or discover something instead of creating other status docs.
 
-Implementation plans live outside the repo in `~/.opencode/plan/`. The only
-open one is `ajustes-tema-reps.md` (a fourth "Ajustes" tab with theme mode and a
-default-reps preference, persisted in a `settings` table). Read that directory
-too whenever you are asked what is pending.
-
-No code issues are pending.
+Implementation plans live outside the repo in `~/.opencode/plan/`. It is empty
+right now, and no code issues are pending either.
 
 ## Cautions
 
