@@ -37,7 +37,9 @@ SQLite persistence. Flet docs: https://flet.dev.
 - `ui/history_tab.py` — "Historial": grouped-by-machine cards with per-record
   delete, plus export/import via a `BottomSheet` opened from the only FAB.
   Export reports the outcome (`EXPORT["saved"]` / `EXPORT["cancelled"]`) through
-  a snackbar, from the path `save_file()` returns.
+  a snackbar, from the path `save_file()` returns. `render()` rebuilds the whole
+  list on every data refresh, so the cards the user left open are tracked in
+  `_expanded_machines` and each `ExpansionTile` is built with its state.
 - `ui/machines_tab.py` — "Máquinas": machine list; create/rename happen in an
   in-tab form (no dialog), delete in a confirmation `AlertDialog`.
 - `ui/texts.py` — every user-facing string (dicts: `NAVIGATION`, `COMMON`,
@@ -250,10 +252,7 @@ open one is `ajustes-tema-reps.md` (a fourth "Ajustes" tab with theme mode and a
 default-reps preference, persisted in a `settings` table). Read that directory
 too whenever you are asked what is pending.
 
-### Code issues
-
-1. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
-   on any refresh.
+No code issues are pending.
 
 ## Cautions
 

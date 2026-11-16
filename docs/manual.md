@@ -122,6 +122,9 @@ antiguo.
 
 - **Toca una máquina** para desplegar sus registros. Cada uno muestra la fecha y
   la serie, por ejemplo `60,0 kg × 12 reps`.
+- La tarjeta sigue desplegada aunque los datos se actualicen: al guardar una
+  serie desde **Registrar** o al borrar un registro, las que tenías abiertas no
+  se cierran.
 - **Toca el icono de la papelera** de un registro para borrarlo. La app pide
   confirmación antes de eliminarlo.
 - El resumen de cada tarjeta (`Último: … · 16 nov. 2026`) indica la serie y la

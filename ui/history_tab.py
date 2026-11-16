@@ -24,6 +24,11 @@ class HistoryTab(_DialogsMixin):
         self._styles = styles
         self._on_refresh = on_refresh
 
+        # Machine ids whose ExpansionTile stays open across a re-render. Flet
+        # recreates the tiles from scratch on every refresh, so the expansion
+        # state has to be kept here.
+        self._expanded_machines: set[int] = set()
+
         self._summary_list = ft.ListView(
             expand=True,
             spacing=10,
@@ -52,6 +57,7 @@ class HistoryTab(_DialogsMixin):
         self._summary_list.controls.clear()
 
         if not results:
+            self._expanded_machines.clear()
             message = (
                 HISTORY["empty_no_machines"] if not machines
                 else HISTORY["empty_no_usages"]
@@ -94,7 +100,11 @@ class HistoryTab(_DialogsMixin):
                 (usage_id, weight, reps, usage_date)
             )
 
-        for machine in grouped.values():
+        # A deleted machine cannot stay expanded, so ids that are no longer in
+        # the list are dropped instead of piling up.
+        self._expanded_machines &= set(grouped)
+
+        for machine_id, machine in grouped.items():
             entries = machine["entries"]
             _latest_id, latest_weight, latest_reps, latest_date = entries[0]
             self._summary_list.controls.append(
@@ -103,6 +113,10 @@ class HistoryTab(_DialogsMixin):
                     shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                     content=ft.ExpansionTile(
                         title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
+                        expanded=machine_id in self._expanded_machines,
+                        on_change=lambda e, mid=machine_id: (
+                            self._on_tile_change(mid, e)
+                        ),
                         subtitle=ft.Text(
                             HISTORY["latest"].format(
                                 value=format_series(latest_weight, latest_reps),
@@ -153,6 +167,14 @@ class HistoryTab(_DialogsMixin):
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
+
+    def _on_tile_change(self, machine_id: int, e) -> None:
+        """Remember a tile's state so the next render can restore it."""
+        expanded = e.data if isinstance(e.data, bool) else str(e.data) == "true"
+        if expanded:
+            self._expanded_machines.add(machine_id)
+        else:
+            self._expanded_machines.discard(machine_id)
 
     def _show_history_actions(self, e) -> None:
         def close_sheet_then(handler):
