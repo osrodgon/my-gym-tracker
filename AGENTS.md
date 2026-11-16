@@ -254,11 +254,7 @@ too whenever you are asked what is pending.
    by `save_file`, so a cancel looks like a success.
 2. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-3. A live theme change reapplies only the image opacity: an open machine form
-   keeps stale colours in its SVG preview and row icons until the next render.
-4. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
-   silently falls back to `assets/icon.png`.
-5. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
+3. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
    are still hardcoded in `xlsx_import.py` instead of `IMPORT`.
 
 ## Cautions
