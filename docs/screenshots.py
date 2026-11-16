@@ -235,12 +235,15 @@ class App:
     def seed(self) -> None:
         sys.path.insert(0, str(PROJECT_DIR))
         from database import GymDatabase
+        from machine_images import get_machine_image_key
 
         if self.db_path.exists():
             self.db_path.unlink()
 
         db = GymDatabase(str(self.db_path))
-        db.replace_data(MACHINES, [])
+        db.replace_data(
+            [(name, get_machine_image_key(name)) for name in MACHINES], []
+        )
         machine_ids = {name: mid for mid, name, _ in db.get_machines()}
 
         with sqlite3.connect(self.db_path) as conn:

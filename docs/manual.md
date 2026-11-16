@@ -147,7 +147,9 @@ El botón flotante de la pestaña **Historial** abre las dos acciones de Excel.
 ### Exportar
 
 **Exportar a Excel** genera un archivo `historial_gimnasio.xlsx` con una fila por
-registro y las columnas `Fecha`, `Máquina`, `Peso (kg)` y `Repeticiones`. El
+registro y las columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones` e
+`Imagen`. La última guarda el dibujo que tiene cada máquina, así que al importar
+el archivo se recuperan también las imágenes. El
 navegador o el sistema piden dónde guardarlo; si cancelas ese diálogo, no se
 escribe ningún archivo.
 
@@ -168,6 +170,8 @@ Por eso la app avisa antes de continuar:
 
 - También acepta archivos antiguos de tres columnas (`Fecha`, `Máquina`,
   `Peso (kg)`); en ese caso se asignan 12 repeticiones a cada serie.
+- Los archivos sin columna `Imagen` (exportados antes de 3.0.0) siguen
+  importándose: el dibujo de cada máquina se deduce de su nombre.
 - Si el archivo trae varias filas de la misma máquina y fecha, se queda con la
   última.
 - Al terminar, la app muestra cuántas máquinas y cuántos registros se han

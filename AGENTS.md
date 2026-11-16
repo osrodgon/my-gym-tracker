@@ -59,7 +59,11 @@ SQLite persistence. Flet docs: https://flet.dev.
   `ft.Image.color`. Never set `ft.Image.color` on a WebP drawing: it blends every
   pixel with that colour and flattens the artwork into a solid silhouette.
 - `xlsx_export.py` / `xlsx_import.py` — Excel I/O with stdlib `zipfile` + XML,
-  no `openpyxl`.
+  no `openpyxl`. One sheet, five columns; the last one (`EXPORT["headers"][-1]`)
+  carries `machines.image_key` so drawings survive an export/import round trip.
+  It is written on the machine's first row only, and the importer takes the first
+  non-empty key of each machine. The importer still accepts the 2.2.0
+  four-column and the older three-column shapes.
 - `docs/manual.md` — user manual (Spanish, with screenshots in `docs/img/`).
   Images are wrapped in `<p align="center"><img … width="320"></p>` rather than
   Markdown, so the 824px-wide PNGs render centred at roughly phone size; keep
@@ -239,22 +243,22 @@ light/dark text themes (15–27.5px). Every token scales from `SCALE = 1.25` in
 This section is the single source of truth for pending work — update it when you
 finish or discover something instead of creating other status docs.
 
+Implementation plans live outside the repo in `~/.opencode/plan/`. The only
+open one is `ajustes-tema-reps.md` (a fourth "Ajustes" tab with theme mode and a
+default-reps preference, persisted in a `settings` table). Read that directory
+too whenever you are asked what is pending.
+
 ### Code issues
 
-1. `get_machine_image_svg()` raises `KeyError` for a key missing from
-   `MACHINE_IMAGES` instead of falling back to "Sin imagen".
-2. Excel export omits `machines.image_key`.
-3. Excel import recomputes `image_key` from the machine name, so exported images
-   come back missing or changed.
-4. Export gives no feedback: `_on_export_history_click` ignores the value returned
+1. Export gives no feedback: `_on_export_history_click` ignores the value returned
    by `save_file`, so a cancel looks like a success.
-5. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
+2. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
-6. A live theme change reapplies only the image opacity: an open machine form
+3. A live theme change reapplies only the image opacity: an open machine form
    keeps stale colours in its SVG preview and row icons until the next render.
-7. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
+4. `build.sh image` prefers `assets/icon_linux.png`, which does not exist, so it
    silently falls back to `assets/icon.png`.
-8. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
+5. Remaining import errors (invalid zip, empty sheet, invalid Excel shared string)
    are still hardcoded in `xlsx_import.py` instead of `IMPORT`.
 
 ## Cautions
@@ -264,7 +268,10 @@ finish or discover something instead of creating other status docs.
 - `gym.db` is runtime data created on first launch — don't treat it as source.
 - `log_use()` always stamps today's date on purpose: the app is meant to be used
   at the machine, so backfilling past usages is out of scope.
-- `replace_data()` truncates both tables; only use it for the import flow.
+- `replace_data()` truncates both tables; only use it for the import flow. It takes
+  `(name, image_key)` pairs rather than bare names: the importer resolves each
+  drawing, including the name-based fallback for workbooks without an `Imagen`
+  column, and an unknown key degrades to `NULL` ("Sin imagen") instead of raising.
 - `usages` has a unique index on `(machine_id, date)`: never insert a second row
   for the same machine and day. Check with `get_usage_for_date()` and use
   `update_usage()` to overwrite both weight and reps. Imports deduplicate in

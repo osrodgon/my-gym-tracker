@@ -96,7 +96,7 @@ El botón flotante de **Historial** abre las opciones de Excel y el de **Máquin
 - Cada uso se guarda con la fecha del día en que se registra; no se pueden registrar entrenamientos pasados.
 - La base impide más de un registro para la misma máquina y día.
 - **La importación de Excel sustituye por completo las máquinas y los registros actuales.** Si el archivo trae varias filas para la misma máquina y fecha, se conserva la última.
-- La exportación escribe columnas `Fecha`, `Máquina`, `Peso (kg)` y `Repeticiones`. La importación también acepta archivos antiguos de tres columnas, en cuyo caso se asignan 12 repeticiones por defecto.
+- La exportación escribe columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones` e `Imagen`, donde la última guarda el dibujo de cada máquina. La importación también acepta archivos antiguos sin `Imagen` (el dibujo se deduce del nombre) y de tres columnas, en cuyo caso se asignan 12 repeticiones por defecto.
 
 ## Estructura del proyecto
 

@@ -5,6 +5,7 @@ from xml.etree import ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 
 from ui.texts import EXPORT, IMPORT
+from machine_images import MACHINE_IMAGES, get_machine_image_key
 
 
 _NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -69,9 +70,25 @@ def _parse_reps(value: str, machine_name: str) -> int:
     return int(numeric)
 
 
+def _resolve_image_key(
+    image_text: str,
+    machine_name: str,
+    has_image_column: bool,
+) -> str | None:
+    """Drawing for an imported machine.
+
+    Workbooks without the `Imagen` column keep the 2.2.0 behaviour of deriving
+    the drawing from the name. An unknown key degrades to "Sin imagen" instead of
+    failing the whole import.
+    """
+    if not has_image_column:
+        return get_machine_image_key(machine_name)
+    return image_text if image_text in MACHINE_IMAGES else None
+
+
 def parse_usage_workbook(
     workbook_bytes: bytes,
-) -> tuple[list[str], list[tuple[str, str, float, int | None]]]:
+) -> tuple[list[tuple[str, str | None]], list[tuple[str, str, float, int | None]]]:
     try:
         with ZipFile(BytesIO(workbook_bytes)) as archive:
             worksheet = ET.fromstring(
@@ -108,24 +125,33 @@ def parse_usage_workbook(
         for cell in row.findall(f"{{{_NS}}}c"):
             reference = cell.get("r", "")
             column = "".join(char for char in reference if char.isalpha())
-            if column in {"A", "B", "C", "D"}:
+            if column in {"A", "B", "C", "D", "E"}:
                 values[column] = _cell_text(cell, shared_strings)
         return values
 
     headers = read_row(rows[0])
-    header_values = [headers.get(column, "").strip() for column in "ABCD"]
+    header_values = [headers.get(column, "").strip() for column in "ABCDE"]
     expected_headers = list(EXPORT["headers"])
 
-    # 2.2.0 workbooks carry the Repeticiones column; older ones stop at Peso.
-    has_reps_column = header_values == expected_headers
-    if not has_reps_column and header_values[:3] != expected_headers[:3]:
+    # 3.0.0 workbooks carry the Imagen column, 2.2.0 stops at Repeticiones and
+    # older ones at Peso. Each older shape stays importable.
+    if header_values == expected_headers:
+        has_reps_column = True
+        has_image_column = True
+    elif header_values[:4] == expected_headers[:4] and not header_values[4]:
+        has_reps_column = True
+        has_image_column = False
+    elif header_values[:3] == expected_headers[:3] and not any(header_values[3:]):
+        has_reps_column = False
+        has_image_column = False
+    else:
         raise ValueError(
             IMPORT["invalid_headers"].format(
                 columns=", ".join(expected_headers)
             )
         )
 
-    machines: dict[str, None] = {}
+    machines: dict[str, str | None] = {}
     usages: list[tuple[str, str, float, int | None]] = []
 
     for row in rows[1:]:
@@ -134,6 +160,7 @@ def parse_usage_workbook(
         machine_name = values.get("B", "").strip()
         weight_text = values.get("C", "").strip()
         reps_text = values.get("D", "").strip() if has_reps_column else ""
+        image_text = values.get("E", "").strip() if has_image_column else ""
 
         if (
             not usage_date
@@ -148,7 +175,11 @@ def parse_usage_workbook(
                 IMPORT["missing_machine"]
             )
 
-        machines.setdefault(machine_name, None)
+        # The export writes the drawing only on the machine's first row, so the
+        # key is taken from whichever row of that machine carries it.
+        image_key = _resolve_image_key(image_text, machine_name, has_image_column)
+        if machine_name not in machines or image_key is not None:
+            machines[machine_name] = image_key
 
         # A blank date and blank weight indicate a machine that has not been used.
         if not usage_date:
@@ -183,4 +214,4 @@ def parse_usage_workbook(
     if not machines:
         raise ValueError(IMPORT["no_machines"])
 
-    return list(machines), usages
+    return list(machines.items()), usages

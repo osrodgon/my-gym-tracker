@@ -130,7 +130,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT u.date, m.name, u.weight, u.reps
+                SELECT u.date, m.name, u.weight, u.reps, m.image_key
                 FROM machines m
                 LEFT JOIN usages u ON u.machine_id = m.id
                 ORDER BY u.date ASC, u.id ASC
@@ -225,7 +225,7 @@ class GymDatabase:
 
     def replace_data(
         self,
-        machines: list[str],
+        machines: list[tuple[str, str | None]],
         usages: list[tuple[str, str, float, int | None]],
     ):
         with self._connect() as conn:
@@ -234,11 +234,13 @@ class GymDatabase:
             cursor.execute("DELETE FROM usages")
             cursor.execute("DELETE FROM machines")
 
+            # The importer resolves the drawing for each machine, including the
+            # fallback to the automatic one for files without an Imagen column.
             cursor.executemany(
                 "INSERT INTO machines (name, image_key) VALUES (?, ?)",
                 [
-                    (name, get_machine_image_key(name))
-                    for name in machines
+                    (name, image_key if image_key in MACHINE_IMAGES else None)
+                    for name, image_key in machines
                 ],
             )
 
