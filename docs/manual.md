@@ -150,8 +150,9 @@ El botón flotante de la pestaña **Historial** abre las dos acciones de Excel.
 registro y las columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones` e
 `Imagen`. La última guarda el dibujo que tiene cada máquina, así que al importar
 el archivo se recuperan también las imágenes. El
-navegador o el sistema piden dónde guardarlo; si cancelas ese diálogo, no se
-escribe ningún archivo.
+navegador o el sistema piden dónde guardarlo y, al terminar, la app avisa de si
+se ha guardado o de si has cancelado el diálogo; en ese caso no se escribe
+ningún archivo.
 
 Es la forma recomendada de hacer una copia de seguridad antes de cambiar de
 dispositivo o de reinstalar la app.
