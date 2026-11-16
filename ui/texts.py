@@ -98,6 +98,8 @@ EXPORT = {
     "dialog_title": "Exportar historial a Excel",
     "file_name": "historial_gimnasio.xlsx",
     "headers": ("Fecha", "Máquina", "Peso (kg)", "Repeticiones", "Imagen"),
+    "saved": "Historial exportado.",
+    "cancelled": "Exportación cancelada.",
 }
 
 ERRORS = {

@@ -239,13 +239,16 @@ class HistoryTab(_DialogsMixin):
     async def _on_export_history_click(self, e) -> None:
         history = self._db.get_usage_history()
         workbook = build_usage_history_workbook(history)
-        await self._file_picker.save_file(
+        # `save_file()` returns the chosen path, or None when the user closes
+        # the dialog without saving.
+        path = await self._file_picker.save_file(
             dialog_title=EXPORT["dialog_title"],
             file_name=EXPORT["file_name"],
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=["xlsx"],
             src_bytes=workbook,
         )
+        self._show_snackbar(EXPORT["saved"] if path else EXPORT["cancelled"])
 
     def _on_import_history_click(self, e) -> None:
         self._page.show_dialog(

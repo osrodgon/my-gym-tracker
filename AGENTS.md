@@ -36,6 +36,8 @@ SQLite persistence. Flet docs: https://flet.dev.
   drawing card, weight + reps fields and the save button.
 - `ui/history_tab.py` — "Historial": grouped-by-machine cards with per-record
   delete, plus export/import via a `BottomSheet` opened from the only FAB.
+  Export reports the outcome (`EXPORT["saved"]` / `EXPORT["cancelled"]`) through
+  a snackbar, from the path `save_file()` returns.
 - `ui/machines_tab.py` — "Máquinas": machine list; create/rename happen in an
   in-tab form (no dialog), delete in a confirmation `AlertDialog`.
 - `ui/texts.py` — every user-facing string (dicts: `NAVIGATION`, `COMMON`,
@@ -250,9 +252,7 @@ too whenever you are asked what is pending.
 
 ### Code issues
 
-1. Export gives no feedback: `_on_export_history_click` ignores the value returned
-   by `save_file`, so a cancel looks like a success.
-2. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
+1. `HistoryTab.render()` rebuilds every control, collapsing open `ExpansionTile`s
    on any refresh.
 
 ## Cautions
