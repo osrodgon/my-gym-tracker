@@ -72,6 +72,12 @@ IMPORT = {
     "continue": "Continuar",
     "dialog_title": "Importar historial desde Excel",
     "missing_file_data": "No se pudieron leer los datos del archivo.",
+    "invalid_file": (
+        "El archivo no es un Excel válido exportado desde la aplicación."
+    ),
+    "invalid_sheet": "El Excel no contiene una hoja de datos válida.",
+    "empty_workbook": "El Excel está vacío.",
+    "invalid_shared_string": "El archivo contiene una cadena de Excel no válida.",
     "failed": "No se pudo importar: {error}",
     "completed": "Importación completada: {machines} máquinas y {usages} registros.",
     "result_title": "Resultado de la importación",
