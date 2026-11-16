@@ -10,5 +10,8 @@ python3 -m pip install -r requirements.txt
 sudo apt-get update
 sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
+# 4. Install chromium for playwrigth
+playwrigth install chromium
+
 # 4. Install opencode
 curl -fsSL https://opencode.ai/install | bash

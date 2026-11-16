@@ -4,6 +4,8 @@ Aplicación móvil y web para llevar el seguimiento de los entrenamientos en má
 
 Está pensada para usarse en el móvil, en el propio gimnasio, con controles y textos grandes.
 
+📖 **[Manual de usuario](docs/manual.md)**: guía paso a paso con capturas de todas las pantallas.
+
 ## Funcionalidades
 
 - **Registro de uso**: elige una máquina, introduce el peso y las repeticiones, y guarda. La app muestra el último registro de esa máquina como referencia y, mientras no hayas elegido ninguna, una ilustración genérica. Desliza la imagen hacia los lados para cambiar de máquina sin abrir el desplegable.
@@ -109,6 +111,10 @@ El botón flotante de **Historial** abre las opciones de Excel y el de **Máquin
 ├── requirements.txt      # Dependencias Python
 ├── build.sh              # Script de compilación y empaquetado
 ├── assets/               # Recursos gráficos (icono, imágenes de máquinas)
+├── docs/                 # Manual de usuario y capturas (no entra en la app)
+│   ├── manual.md         # Manual de usuario en español
+│   ├── screenshots.py    # Regenera docs/img/*.png con Playwright
+│   └── img/              # Capturas usadas por el manual
 ├── ui/                   # Módulos de interfaz de usuario
 │   ├── views.py          # Vista principal y navegación
 │   ├── usage_tab.py      # Pestaña de registro de uso
@@ -138,6 +144,20 @@ También puedes hacerlo ejecutable y llamarlo directamente:
 chmod +x build.sh
 ./build.sh web
 ```
+
+## Manual de usuario
+
+El manual está en [`docs/manual.md`](docs/manual.md) y usa las capturas de `docs/img/`. Los textos y las imágenes se actualizan en el mismo cambio que la interfaz.
+
+Las capturas se regeneran con el script `docs/screenshots.py`, que arranca la app en modo web contra una base de datos de ejemplo temporal (no toca `gym.db`) y hace clic en la interfaz real:
+
+```bash
+pip install playwright
+playwright install chromium
+python docs/screenshots.py
+```
+
+Necesita el puerto `8550` libre. Los clics están medidos sobre la ventana de 412x892 dp, así que un cambio de diseño obliga a revisar las coordenadas del script.
 
 ## Generación de APK (Android)
 

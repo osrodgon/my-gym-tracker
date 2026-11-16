@@ -60,6 +60,16 @@ SQLite persistence. Flet docs: https://flet.dev.
   pixel with that colour and flattens the artwork into a solid silhouette.
 - `xlsx_export.py` / `xlsx_import.py` — Excel I/O with stdlib `zipfile` + XML,
   no `openpyxl`.
+- `docs/manual.md` — user manual (Spanish, with screenshots in `docs/img/`).
+  Images are wrapped in `<p align="center"><img … width="320"></p>` rather than
+  Markdown, so the 824px-wide PNGs render centred at roughly phone size; keep
+  both attributes when adding or moving one.
+  `docs/screenshots.py` regenerates those PNGs: it starts `main.py` in web mode
+  against a throwaway SQLite database in a temp dir (never `gym.db`), drives the
+  real UI with Playwright at 412×892 dp / 2x, and forces `--theme dark` for the
+  dark shot. It needs `pip install playwright` + `playwright install chromium`
+  and port 8550 free. The clicks are hardcoded CSS coordinates tied to the
+  current layout: re-measure them after redesigning a tab.
 - `build/` — generated output, never edit.
 
 ## Conventions
@@ -68,6 +78,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   it in the same change whenever user-visible behaviour, requirements, commands,
   build flow, data rules or supported platforms change. Don't leave it stale;
   `AGENTS.md` stays the internal source of truth for pending work and conventions.
+- `docs/manual.md` is also user-facing and Spanish. When a change alters a flow
+  it describes (labels, steps, dialogs, defaults), update the manual and the
+  affected screenshots with `python docs/screenshots.py` in the same change.
 - Anything that lives on GitHub — issue titles and bodies, pull requests, commit
   messages, review comments — is written in English, even though the UI and
   `README.md` are Spanish.
