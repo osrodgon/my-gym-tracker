@@ -78,6 +78,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   dark shot. It needs `pip install playwright` + `playwright install chromium`
   and port 8550 free. The clicks are hardcoded CSS coordinates tied to the
   current layout: re-measure them after redesigning a tab.
+- `docs/plans/` — design plans for work that is not implemented yet (see
+  *Known gaps*). `docs/mockups/` — mockups of proposed changes, edited over the
+  `docs/img` screenshots; the manual does not use them.
 - `build/` — generated output, never edit.
 
 ## Conventions
@@ -247,8 +250,15 @@ light/dark text themes (15–27.5px). Every token scales from `SCALE = 1.25` in
 This section is the single source of truth for pending work — update it when you
 finish or discover something instead of creating other status docs.
 
-Implementation plans live outside the repo in `~/.opencode/plan/`. It is empty
-right now, and no code issues are pending either.
+Implementation plans live **inside the repo** in `docs/plans/`, not in
+`~/.opencode/plan/`: the workspace survives a devcontainer rebuild, the home
+directory does not. One file per feature, with the decisions, the measurements
+they rest on and what is still open.
+
+Pending: `docs/plans/rpe.md` (three-level RPE, weight delta, PR badge in
+Historial) — designed and mocked, not implemented. Backlog of everything else
+considered so far, including the structural items that need new tables:
+`docs/plans/ideas.md`. No code issues are pending.
 
 ## Cautions
 
