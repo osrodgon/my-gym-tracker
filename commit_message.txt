@@ -1,6 +1,0 @@
-Implemented proper keyboard dismissal after saving a usage on Android. Added helper to move focus to the save button and ensured it runs after successful inserts and overwrites.
-
-- Added `self._save_button` to `UsageTab` for focus control.
-- Implemented `_dismiss_keyboard()` that calls `page.run_task(self._save_button.focus)`.
-- Updated `_save_usage()` and overwrite handler to invoke the helper.
-- Minor style tweaks and documentation comments.

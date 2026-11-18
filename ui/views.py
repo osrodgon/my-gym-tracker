@@ -37,10 +37,27 @@ class GymAppView(ft.Column):
     # ------------------------------------------------------------------
 
     def _build_navigation(self) -> None:
+        # Each entry: label, panel, icon (unselected), selected_icon. M3 uses the
+        # outlined variant at rest and the filled one when a destination is active.
         self._sections = [
-            (NAVIGATION["usage"],    self._usage_tab.panel,    ft.Icons.MONITOR_HEART),
-            (NAVIGATION["history"],  self._history_tab.panel,  ft.Icons.HISTORY),
-            (NAVIGATION["machines"], self._machines_tab.panel, ft.Icons.FORMAT_LIST_BULLETED),
+            (
+                NAVIGATION["usage"],
+                self._usage_tab.panel,
+                ft.Icons.EDIT_OUTLINED,
+                ft.Icons.EDIT,
+            ),
+            (
+                NAVIGATION["history"],
+                self._history_tab.panel,
+                ft.Icons.HISTORY,
+                ft.Icons.HISTORY,
+            ),
+            (
+                NAVIGATION["machines"],
+                self._machines_tab.panel,
+                ft.Icons.FORMAT_LIST_BULLETED,
+                ft.Icons.FORMAT_LIST_BULLETED,
+            ),
         ]
         self._selected_section = 0
 
@@ -52,8 +69,10 @@ class GymAppView(ft.Column):
             selected_index=self._selected_section,
             on_change=self._on_navigation_change,
             destinations=[
-                ft.NavigationBarDestination(label=label, icon=icon)
-                for label, _, icon in self._sections
+                ft.NavigationBarDestination(
+                    label=label, icon=icon, selected_icon=selected_icon
+                )
+                for label, _, icon, selected_icon in self._sections
             ],
         )
         self.controls = [
@@ -100,6 +119,19 @@ class GymAppView(ft.Column):
         fabs = {1: self._history_tab.fab, 2: self._machines_tab.fab}
         self.page.floating_action_button = fabs.get(self._selected_section)
 
+    def refresh_theme(self) -> None:
+        """Reapply the values that are not Material scheme roles.
+
+        The machine illustrations use an opacity, a plain number, so Flet does
+        not repaint them on its own when the theme changes. Called at startup,
+        after every data refresh and from the platform brightness handler.
+        """
+        if self.parent is None:
+            return
+        self._usage_tab.apply_theme()
+        self._machines_tab.apply_theme()
+        self.update()
+
     # ------------------------------------------------------------------
     # Data refresh
     # ------------------------------------------------------------------
@@ -118,12 +150,4 @@ class GymAppView(ft.Column):
         self._usage_tab.reset()
 
         if self.page is not None:
-            self.update()
-
-    # ------------------------------------------------------------------
-    # Platform brightness
-    # ------------------------------------------------------------------
-
-    def _on_platform_brightness_change(self, e) -> None:
-        self._usage_tab.on_brightness_change()
-        self.update()
+            self.refresh_theme()

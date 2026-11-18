@@ -1,4 +1,5 @@
 import flet as ft
+from app_options import AppOptions, parse_args
 from database import GymDatabase
 from ui import design
 from ui.views import GymAppView
@@ -9,6 +10,7 @@ def _build_text_theme(color: str) -> ft.TextTheme:
     return ft.TextTheme(
         body_large=ft.TextStyle(size=design.FONT_BODY_LARGE, color=color),
         body_medium=ft.TextStyle(size=design.FONT_BODY_MEDIUM, color=color),
+        body_small=ft.TextStyle(size=design.FONT_BODY_SMALL, color=color),
         label_large=ft.TextStyle(size=design.FONT_LABEL_LARGE, color=color),
         title_large=ft.TextStyle(size=design.FONT_TITLE_LARGE, color=color),
         title_medium=ft.TextStyle(size=design.FONT_TITLE_MEDIUM, color=color),
@@ -17,7 +19,7 @@ def _build_text_theme(color: str) -> ft.TextTheme:
 
 def _build_theme(color: str) -> ft.Theme:
     return ft.Theme(
-        color_scheme_seed=ft.Colors.BLUE,
+        color_scheme_seed=design.SEED_COLOR,
         text_theme=_build_text_theme(color),
         card_theme=ft.CardTheme(
             shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
@@ -31,9 +33,14 @@ def _build_theme(color: str) -> ft.Theme:
             shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
         ),
         dropdown_theme=ft.DropdownTheme(
+            text_style=ft.TextStyle(
+                size=design.FONT_BODY_LARGE, color=color
+            ),
             menu_style=ft.MenuStyle(
                 shape=ft.RoundedRectangleBorder(radius=design.MENU_RADIUS),
                 padding=design.MENU_PADDING,
+                # M3 level 2; Flet's Dropdown default is 8 (Material 2).
+                elevation=design.MENU_ELEVATION,
             ),
         ),
         dialog_theme=ft.DialogTheme(
@@ -51,6 +58,7 @@ def _build_theme(color: str) -> ft.Theme:
         ),
         navigation_bar_theme=ft.NavigationBarTheme(
             height=design.NAV_BAR_HEIGHT,
+            bgcolor=design.SURFACE_PANEL_COLOR,
             label_text_style=ft.TextStyle(
                 size=design.FONT_NAV_LABEL, color=color
             ),
@@ -58,28 +66,27 @@ def _build_theme(color: str) -> ft.Theme:
     )
 
 
-def main(page: ft.Page):
-    # Set the theme mode to system default (light/dark)
-    page.theme_mode = ft.ThemeMode.SYSTEM
+def main(page: ft.Page, options: AppOptions):
+    # Theme and window size come from the command line (see app_options.py);
+    # without arguments this is the system theme and a 540x960 window.
+    page.theme_mode = options.theme_mode
 
-    # Light and dark themes built from the same Material 3 tokens.
-    page.theme = _build_theme(ft.Colors.BLACK)
-    page.dark_theme = _build_theme(ft.Colors.WHITE)
+    # Light and dark themes built from the same Material 3 tokens. Text colour
+    # is the scheme's onSurface role, so M3 resolves the contrast per theme.
+    page.theme = _build_theme(ft.Colors.ON_SURFACE)
+    page.dark_theme = _build_theme(ft.Colors.ON_SURFACE)
 
     # UI title in Spanish
     page.title = NAVIGATION["app_name"]
     page.vertical_alignment = ft.MainAxisAlignment.START
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 540
-    page.window.height = 960
+    page.window.width = options.window_width
+    page.window.height = options.window_height
 
     db = GymDatabase()
     
     # By inheriting from ft.Column, it is added directly
     app_view = GymAppView(db)
-    page.on_platform_brightness_change = (
-        app_view._on_platform_brightness_change
-    )
     page.services.append(app_view.file_picker)
     page.navigation_bar = app_view.navigation_bar
     page.add(
@@ -95,5 +102,16 @@ def main(page: ft.Page):
     page.views[0].on_confirm_pop = app_view.on_confirm_pop
     app_view.update_data()  # Initial call to load data when starting the application
 
+    # The machine drawings fade with an opacity, which Flet does not repaint on
+    # its own when the theme changes (unlike a scheme colour), so a live switch
+    # of the OS theme has to reapply it. Android's dark mode arrives here too.
+    page.on_platform_brightness_change = lambda e: app_view.refresh_theme()
+
 if __name__ == "__main__":
-    ft.run(main, view=ft.AppView.WEB_BROWSER, port=8550, host="0.0.0.0")
+    options = parse_args()
+    ft.run(
+        lambda page: main(page, options),
+        view=ft.AppView.WEB_BROWSER,
+        port=8550,
+        host="0.0.0.0",
+    )

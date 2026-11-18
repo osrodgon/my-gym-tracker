@@ -1,1 +1,2 @@
 flet==1.0.5
+playwright==1.65.2
