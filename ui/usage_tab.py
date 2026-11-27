@@ -19,6 +19,8 @@ from ui.utils import (
     create_dropdown,
     create_text_field,
     format_series,
+    format_set,
+    format_weight,
     is_dark_theme,
 )
 
@@ -29,6 +31,13 @@ _WEIGHT_RE = re.compile(r"^[+-]?\d+(?:,\d+)?$")
 _REPS_RE = re.compile(r"^[+-]?\d+$")
 _SWIPE_VELOCITY = 400
 """px/s a horizontal drag must reach to count as a machine swipe."""
+_RPE_OPTIONS = (
+    ("6", "rpe_low"),
+    ("8", "rpe_mid"),
+    ("10", "rpe_high"),
+)
+"""Three effort levels stored as 6/8/10 so the numbers stay standard and the
+labels in `USAGE` can change later without migrating data."""
 
 
 class UsageTab(_DialogsMixin):
@@ -49,6 +58,9 @@ class UsageTab(_DialogsMixin):
         self._machine_names: dict[str, str] = {}
         self._machine_order: list[str] = []
         self._reset_count = 0
+        self._latest_weight: float | None = None
+        self._latest_rpe: int | None = None
+        self._rpe_value: str | None = None
 
         self._machine_dropdown = create_dropdown(
             label=USAGE["machine_label"],
@@ -63,6 +75,14 @@ class UsageTab(_DialogsMixin):
         # blank in Flet 1.0.5, while a fresh Text control renders fine and still
         # wraps to a second line when the message is long.
         self._latest_usage_slot = ft.Container(expand=True)
+        # Trailing chip with the last recorded effort; rebuilt, not mutated, for
+        # the same reason as the banner text above.
+        self._latest_rpe_chip = ft.Container(
+            visible=False,
+            bgcolor=ft.Colors.PRIMARY_CONTAINER,
+            border_radius=design.BADGE_RADIUS,
+            padding=design.BADGE_PADDING,
+        )
         self._latest_usage_banner = ft.Container(
             col={"xs": 12},
             bgcolor=design.SURFACE_PANEL_COLOR,
@@ -83,6 +103,10 @@ class UsageTab(_DialogsMixin):
                         ),
                     ),
                     self._latest_usage_slot,
+                    ft.Container(
+                        padding=ft.Padding.only(left=design.dp(8)),
+                        content=self._latest_rpe_chip,
+                    ),
                 ],
             ),
         )
@@ -111,6 +135,11 @@ class UsageTab(_DialogsMixin):
             on_submit=self._focus_reps,
             col={"xs": 6},
         )
+        # The delta is a suffix of the weight field: it only makes sense while
+        # typing the weight, so it lives next to the value instead of in the
+        # banner. Assigned once and mutated, never recreated (see `reset()`).
+        self._weight_delta = ft.Text()
+        self._weight_input.suffix = self._weight_delta
 
         self._reps_input = create_text_field(
             label=USAGE["reps_label"],
@@ -118,6 +147,15 @@ class UsageTab(_DialogsMixin):
             on_change=self._clear_reps_error,
             on_submit=self._on_log_usage_click,
             col={"xs": 6},
+        )
+
+        # Three targets, not ten: the app is used standing, one-handed, tapping
+        # with a thumb, and ten segments in 412 dp are 30 dp wide. Tapping the
+        # active one clears the choice, so "no effort" stays a state.
+        self._rpe_row = ft.ResponsiveRow(
+            spacing=design.dp(8),
+            run_spacing=design.dp(8),
+            controls=self._build_rpe_buttons(),
         )
 
         self._save_button = ft.FilledButton(
@@ -184,10 +222,17 @@ class UsageTab(_DialogsMixin):
         self._reset_count += 1
         self._machine_dropdown.key = f"machine-dropdown-{self._reset_count}"
         self._set_latest_usage(USAGE["select_machine"])
+        self._latest_weight = None
+        self._latest_rpe = None
+        self._set_rpe_chip(None)
         self._weight_input.value = ""
         self._weight_input.error = None
+        self._weight_delta.value = ""
+        self._weight_delta.color = None
         self._reps_input.value = ""
         self._reps_input.error = None
+        self._rpe_value = None
+        self._sync_rpe_buttons()
         self._show_no_selection_image()
 
         # `parent` is None until the tab is mounted on a page; `page` would raise.
@@ -238,6 +283,7 @@ class UsageTab(_DialogsMixin):
                     header_row,
                     self._card_area,
                     inputs_row,
+                    self._rpe_row,
                     ft.Container(
                         padding=ft.Padding.only(bottom=design.dp(8)),
                         content=ft.ResponsiveRow(
@@ -258,6 +304,102 @@ class UsageTab(_DialogsMixin):
         self._latest_usage_slot.content = ft.Text(
             spans=spans, color=ft.Colors.ON_SURFACE
         )
+
+    def _set_rpe_chip(self, rpe: int | None) -> None:
+        """Show the last recorded effort as a trailing banner chip.
+
+        The `Text` is rebuilt instead of mutated for the same reason as the
+        banner text above.
+        """
+        if rpe is None:
+            self._latest_rpe_chip.visible = False
+            return
+        self._latest_rpe_chip.content = ft.Text(
+            USAGE["rpe_badge"].format(value=rpe),
+            color=ft.Colors.ON_PRIMARY_CONTAINER,
+            size=design.FONT_BODY_SMALL,
+        )
+        self._latest_rpe_chip.visible = True
+
+    def _update_weight_delta(self) -> None:
+        """Compare the typed weight with the machine's latest record.
+
+        Hidden when the field is empty or unparseable, when the value equals the
+        last weight, and when no machine is selected.
+        """
+        raw = (self._weight_input.value or "").strip()
+        if (
+            self._latest_weight is None
+            or not raw
+            or not _WEIGHT_RE.fullmatch(raw)
+        ):
+            self._set_weight_delta("", None)
+            return
+
+        weight = float(raw.replace(",", "."))
+        if not math.isfinite(weight):
+            self._set_weight_delta("", None)
+            return
+
+        delta = round(weight - self._latest_weight, 1)
+        if delta == 0:
+            self._set_weight_delta("", None)
+        elif delta > 0:
+            self._set_weight_delta(
+                USAGE["delta_up"].format(value=format_weight(abs(delta))),
+                ft.Colors.PRIMARY,
+            )
+        else:
+            self._set_weight_delta(
+                USAGE["delta_down"].format(value=format_weight(abs(delta))),
+                ft.Colors.ON_SURFACE_VARIANT,
+            )
+
+    def _set_weight_delta(self, value: str, color) -> None:
+        self._weight_delta.value = value
+        self._weight_delta.color = color
+
+    def _build_rpe_buttons(self) -> list[ft.Control]:
+        """The three effort pills, with the selected one filled."""
+        buttons = []
+        for value, key in _RPE_OPTIONS:
+            selected = value == self._rpe_value
+            factory = ft.FilledButton if selected else ft.OutlinedButton
+            buttons.append(
+                factory(
+                    # A single line on purpose: the pills must keep the same
+                    # height whatever the system font scale is.
+                    ft.Text(
+                        USAGE[key],
+                        size=design.FONT_LABEL_LARGE,
+                        weight=ft.FontWeight.W_500,
+                        color=(
+                            ft.Colors.ON_PRIMARY
+                            if selected
+                            else ft.Colors.ON_SURFACE
+                        ),
+                        no_wrap=True,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                    col={"xs": 4},
+                    height=design.RPE_BUTTON_HEIGHT,
+                    style=(
+                        self._styles.rpe_selected
+                        if selected
+                        else self._styles.rpe_unselected
+                    ),
+                    on_click=lambda e, v=value: self._on_rpe_click(v),
+                )
+            )
+        return buttons
+
+    def _sync_rpe_buttons(self) -> None:
+        self._rpe_row.controls = self._build_rpe_buttons()
+        if self.panel.parent is not None:
+            self._rpe_row.update()
+
+    def _selected_rpe(self) -> int | None:
+        return int(self._rpe_value) if self._rpe_value else None
 
     def _update_machine_image(self, key: str | None) -> None:
         # The card never collapses: a machine without its own drawing keeps the
@@ -320,6 +462,9 @@ class UsageTab(_DialogsMixin):
     def _clear_weight_error(self, e=None) -> None:
         if self._weight_input.error is not None:
             self._weight_input.error = None
+        # The delta is recomputed from the same `on_change` event.
+        self._update_weight_delta()
+        if self.panel.parent is not None:
             self._weight_input.update()
 
     def _clear_reps_error(self, e=None) -> None:
@@ -347,6 +492,11 @@ class UsageTab(_DialogsMixin):
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
+
+    def _on_rpe_click(self, value: str) -> None:
+        """Pick the effort of this set; tapping the active one clears it."""
+        self._rpe_value = None if value == self._rpe_value else value
+        self._sync_rpe_buttons()
 
     def _on_machine_selected(self, e) -> None:
         if self._machine_dropdown.error_text is not None:
@@ -392,20 +542,31 @@ class UsageTab(_DialogsMixin):
         selected_id = self._machine_dropdown.value
 
         if not selected_id:
+            self._latest_weight = None
+            self._latest_rpe = None
             self._show_no_selection_image()
             self._set_latest_usage(USAGE["select_machine"])
+            self._set_rpe_chip(None)
+            self._update_weight_delta()
             return
 
         self._update_machine_image(self._machine_image_keys.get(selected_id))
 
         latest = self._db.get_latest_usage(int(selected_id))
         if latest is None:
+            self._latest_weight = None
+            self._latest_rpe = None
             self._set_latest_usage(USAGE["no_records"])
         else:
-            weight, reps, _usage_date = latest
+            weight, reps, rpe, _usage_date = latest
+            self._latest_weight = weight
+            self._latest_rpe = rpe
             self._set_latest_usage(
                 USAGE["latest_prefix"], format_series(weight, reps)
             )
+
+        self._set_rpe_chip(self._latest_rpe)
+        self._update_weight_delta()
 
     def _on_log_usage_click(self, e) -> None:
         has_error = False
@@ -427,6 +588,7 @@ class UsageTab(_DialogsMixin):
             return
 
         machine_id = int(self._machine_dropdown.value)
+        rpe = self._selected_rpe()
 
         try:
             existing = self._db.get_usage_for_date(machine_id)
@@ -435,22 +597,30 @@ class UsageTab(_DialogsMixin):
             return
 
         if existing is not None:
-            usage_id, stored_weight, stored_reps = existing
+            usage_id, stored_weight, stored_reps, stored_rpe = existing
             self._show_overwrite_dialog(
                 machine_id,
                 usage_id,
                 stored_weight,
                 stored_reps,
+                stored_rpe,
                 weight,
                 reps,
+                rpe,
             )
             return
 
-        self._save_usage(machine_id, weight, reps)
+        self._save_usage(machine_id, weight, reps, rpe)
 
-    def _save_usage(self, machine_id: int, weight: float, reps: int) -> None:
+    def _save_usage(
+        self,
+        machine_id: int,
+        weight: float,
+        reps: int,
+        rpe: int | None,
+    ) -> None:
         try:
-            self._db.log_use(machine_id, weight, reps)
+            self._db.log_use(machine_id, weight, reps, rpe)
         except sqlite3.Error as exc:
             self._show_error(ERRORS["log_usage"].format(error=exc))
             return
@@ -465,15 +635,17 @@ class UsageTab(_DialogsMixin):
         usage_id: int,
         stored_weight: float,
         stored_reps: int | None,
+        stored_rpe: int | None,
         new_weight: float,
         new_reps: int,
+        new_rpe: int | None,
     ) -> None:
         machine_name = self._machine_names.get(str(machine_id), "")
 
         def _confirm_overwrite(e) -> None:
             self._page.pop_dialog()
             try:
-                self._db.update_usage(usage_id, new_weight, new_reps)
+                self._db.update_usage(usage_id, new_weight, new_reps, new_rpe)
             except sqlite3.Error as exc:
                 self._show_error(ERRORS["log_usage"].format(error=exc))
                 return
@@ -488,8 +660,10 @@ class UsageTab(_DialogsMixin):
                 content=ft.Text(
                     USAGE["duplicate_message"].format(
                         machine=machine_name,
-                        current=format_series(stored_weight, stored_reps),
-                        new=format_series(new_weight, new_reps),
+                        current=format_set(
+                            stored_weight, stored_reps, stored_rpe
+                        ),
+                        new=format_set(new_weight, new_reps, new_rpe),
                     )
                 ),
                 actions=[

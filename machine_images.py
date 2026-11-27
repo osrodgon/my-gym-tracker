@@ -17,6 +17,7 @@ MACHINE_IMAGES = {
     "extension-de-triceps": "machines/tricep-extension.webp",
     "jalon-al-pecho": "machines/lat-pulldown.webp",
     "mancuernas": "machines/dumbbells.webp",
+    "apertura-de-pectoral": "machines/pec-fly.webp",
     "press-de-hombros": "machines/shoulder-press.webp",
     "press-de-pecho": "machines/chest-press.webp",
     "press-de-piernas": "machines/leg-press.webp",

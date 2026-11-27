@@ -68,11 +68,14 @@ NAV_MACHINES = (343, 862)
 MACHINE_DROPDOWN = (206, 58)
 """Registrar machine selector, top of the panel."""
 
-WEIGHT_FIELD = (104, 660)
-REPS_FIELD = (308, 660)
+WEIGHT_FIELD = (104, 590)
+REPS_FIELD = (308, 590)
 SAVE_BUTTON = (206, 752)
 REGISTRAR_HEADER = (206, 120)
 """Neutral spot (the latest-record banner) used to drop the focused field."""
+
+RPE_BUTTON = (206, 661)
+"""Middle effort button (Justo), below the weight and reps fields."""
 
 MENU_FIRST_ROW_Y = 118
 MENU_ROW_HEIGHT = 40
@@ -114,24 +117,24 @@ MACHINES = [
     "Press de hombros",
 ]
 
-# (machine name, days ago, weight, reps); today's entry on "Press de pecho" is
-# what the duplicate dialog screenshot overwrites.
+# (machine name, days ago, weight, reps, rpe); today's entry on "Press de pecho"
+# is what the duplicate dialog screenshot overwrites.
 USAGES = [
-    ("Press de pecho", 0, 60.0, 12),
-    ("Press de pecho", 2, 57.5, 12),
-    ("Press de pecho", 5, 55.0, 12),
-    ("Press de pecho", 9, 50.0, 10),
-    ("Jalón al pecho", 1, 45.0, 12),
-    ("Jalón al pecho", 3, 42.5, 12),
-    ("Jalón al pecho", 7, 40.0, 10),
-    ("Press de piernas", 1, 120.0, 10),
-    ("Press de piernas", 4, 110.0, 10),
-    ("Press de piernas", 8, 100.0, 12),
-    ("Extensión de piernas", 2, 55.0, 12),
-    ("Extensión de piernas", 6, 50.0, 12),
-    ("Curl de bíceps", 2, 20.0, 12),
-    ("Curl de bíceps", 7, 17.5, 12),
-    ("Press de hombros", 3, 30.0, 10),
+    ("Press de pecho", 0, 60.0, 12, 8),
+    ("Press de pecho", 2, 57.5, 12, 8),
+    ("Press de pecho", 5, 55.0, 12, 6),
+    ("Press de pecho", 9, 50.0, 10, 6),
+    ("Jalón al pecho", 1, 45.0, 12, 8),
+    ("Jalón al pecho", 3, 42.5, 12, 8),
+    ("Jalón al pecho", 7, 40.0, 10, 6),
+    ("Press de piernas", 1, 120.0, 10, 10),
+    ("Press de piernas", 4, 110.0, 10, 8),
+    ("Press de piernas", 8, 100.0, 12, 6),
+    ("Extensión de piernas", 2, 55.0, 12, 8),
+    ("Extensión de piernas", 6, 50.0, 12, 6),
+    ("Curl de bíceps", 2, 20.0, 12, 6),
+    ("Curl de bíceps", 7, 17.5, 12, None),
+    ("Press de hombros", 3, 30.0, 10, 8),
 ]
 
 DEMO_MACHINE = "Press de pecho"
@@ -247,16 +250,17 @@ class App:
         machine_ids = {name: mid for mid, name, _ in db.get_machines()}
 
         with sqlite3.connect(self.db_path) as conn:
-            for name, days_ago, weight, reps in USAGES:
+            for name, days_ago, weight, reps, rpe in USAGES:
                 conn.execute(
                     """
-                    INSERT INTO usages (machine_id, weight, reps, date)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO usages (machine_id, weight, reps, rpe, date)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
                     (
                         machine_ids[name],
                         weight,
                         reps,
+                        rpe,
                         (date.today() - timedelta(days=days_ago)).isoformat(),
                     ),
                 )
@@ -409,6 +413,9 @@ class Screenshotter:
         self.type(REPS_FIELD, DEMO_REPS)
         self.click(REGISTRAR_HEADER)
 
+    def select_rpe(self) -> None:
+        self.click(RPE_BUTTON)
+
     def go_to(self, destination: tuple[float, float]) -> None:
         self.click(destination)
 
@@ -424,12 +431,19 @@ def take_shots(browser, out_dir: Path, workdir: Path) -> None:
     print("Light theme")
     with App(workdir):
         with Screenshotter(browser, out_dir) as ui:
+            # The first frame after boot can lay the text out with the fallback
+            # font metrics (a wrapped dropdown label and clipped nav labels),
+            # and nothing repaints until the tree is updated. Tapping the
+            # destination the app already shows forces that harmless rebuild.
+            ui.click(NAV_REGISTRAR)
+
             # Registrar before choosing a machine: generic drawing and hint.
             ui.save("01-register-empty.png")
 
             # Registrar with a machine, its last record and a filled set.
             ui.select_machine()
             ui.fill_series()
+            ui.select_rpe()
             ui.save("02-register-set.png")
 
             # Saving a second set for the same day asks before overwriting.
@@ -469,9 +483,13 @@ def take_shots(browser, out_dir: Path, workdir: Path) -> None:
     print("Dark theme")
     with DarkApp(workdir):
         with Screenshotter(browser, out_dir, dark=True) as ui:
+            # Same first-frame font issue as the light run above.
+            ui.click(NAV_REGISTRAR)
+
             # The dark theme keeps the same layout, with a fainter drawing.
             ui.select_machine()
             ui.fill_series()
+            ui.select_rpe()
             ui.save("03-register-dark-theme.png")
 
 

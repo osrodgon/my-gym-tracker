@@ -33,6 +33,14 @@ def format_series(weight: float, reps: int | None) -> str:
     )
 
 
+def format_set(weight: float, reps: int | None, rpe: int | None) -> str:
+    """Format a logged set including its effort rating, when it has one."""
+    series = format_series(weight, reps)
+    if rpe is None:
+        return series
+    return f"{series} · {SERIES['rpe'].format(value=rpe)}"
+
+
 def is_dark_theme(page: ft.Page) -> bool:
     """Whether the UI is rendering the dark theme right now.
 
@@ -191,6 +199,17 @@ class ButtonStyles:
         )
         self.default = base
         self.primary = base.copy(padding=design.PRIMARY_BUTTON_PADDING)
+        # Effort pills: the chosen level is a filled primary button, the rest are
+        # outlined. Accepted consequence: the selected pill and the save button
+        # share the primary colour by design (the user picked this look over the
+        # tonal variant), so don't "fix" it on the way past.
+        self.rpe_selected = base.copy(
+            bgcolor=ft.Colors.PRIMARY, color=ft.Colors.ON_PRIMARY
+        )
+        self.rpe_unselected = base.copy(
+            color=ft.Colors.ON_SURFACE,
+            side=ft.BorderSide(width=1, color=ft.Colors.OUTLINE),
+        )
         self.menu_item = ft.ButtonStyle(
             padding=design.MENU_ITEM_PADDING,
             text_style=ft.TextStyle(size=design.FONT_LABEL_LARGE),

@@ -79,6 +79,12 @@ class GymDatabase:
                 (DEFAULT_REPS,),
             )
 
+            # Databases created before 3.2.0 have no rpe column. Unlike reps,
+            # NULL is meaningful here ("no effort rating"), so there is no
+            # backfill: an old record simply has no RPE.
+            if "rpe" not in usage_columns:
+                cursor.execute("ALTER TABLE usages ADD COLUMN rpe INTEGER")
+
             conn.commit()
 
     def _dedupe_usages(self, cursor):
@@ -111,7 +117,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT u.id, m.id, m.name, u.weight, u.reps, u.date
+                SELECT u.id, m.id, m.name, u.weight, u.reps, u.rpe, u.date
                 FROM usages u
                 JOIN machines m ON m.id = u.machine_id
                 ORDER BY u.date DESC, u.id DESC
@@ -130,7 +136,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT u.date, m.name, u.weight, u.reps, m.image_key
+                SELECT u.date, m.name, u.weight, u.reps, u.rpe, m.image_key
                 FROM machines m
                 LEFT JOIN usages u ON u.machine_id = m.id
                 ORDER BY u.date ASC, u.id ASC
@@ -141,7 +147,7 @@ class GymDatabase:
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT weight, reps, date
+                SELECT weight, reps, rpe, date
                 FROM usages
                 WHERE machine_id = ?
                 ORDER BY date DESC, id DESC
@@ -155,7 +161,7 @@ class GymDatabase:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT id, weight, reps
+                SELECT id, weight, reps, rpe
                 FROM usages
                 WHERE machine_id = ? AND date = ?
                 """,
@@ -163,26 +169,48 @@ class GymDatabase:
             )
             return cursor.fetchone()
 
-    def log_use(self, machine_id, weight, reps):
+    def get_personal_record(self, machine_id):
+        """Heaviest set for a machine, more reps breaking a tie."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT weight, reps, date
+                FROM usages
+                WHERE machine_id = ?
+                ORDER BY weight DESC, reps DESC, date DESC
+                LIMIT 1
+                """,
+                (machine_id,),
+            )
+            return cursor.fetchone()
+
+    def log_use(self, machine_id, weight, reps, rpe=None):
         today = self._today()
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO usages (machine_id, weight, reps, date)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO usages (machine_id, weight, reps, rpe, date)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (machine_id, weight, reps, today),
+                (machine_id, weight, reps, rpe, today),
             )
             conn.commit()
 
-    def update_usage(self, usage_id: int, weight: float, reps: int) -> None:
-        """Overwrite the weight and reps of an existing usage record."""
+    def update_usage(
+        self,
+        usage_id: int,
+        weight: float,
+        reps: int,
+        rpe: int | None = None,
+    ) -> None:
+        """Overwrite the weight, reps and effort of an existing usage record."""
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE usages SET weight = ?, reps = ? WHERE id = ?",
-                (weight, reps, usage_id),
+                "UPDATE usages SET weight = ?, reps = ?, rpe = ? WHERE id = ?",
+                (weight, reps, rpe, usage_id),
             )
             conn.commit()
 
@@ -226,7 +254,7 @@ class GymDatabase:
     def replace_data(
         self,
         machines: list[tuple[str, str | None]],
-        usages: list[tuple[str, str, float, int | None]],
+        usages: list[tuple[str, str, float, int | None, int | None]],
     ):
         with self._connect() as conn:
             cursor = conn.cursor()
@@ -253,21 +281,22 @@ class GymDatabase:
 
             # The unique index allows one usage per machine and date, so an
             # imported workbook with duplicates keeps the last row for each pair.
-            unique_usages: dict[tuple[str, str], tuple[float, int]] = {}
-            for usage_date, machine_name, weight, reps in usages:
+            unique_usages: dict[tuple[str, str], tuple[float, int, int | None]] = {}
+            for usage_date, machine_name, weight, reps, rpe in usages:
                 unique_usages[(usage_date, machine_name)] = (
                     weight,
                     DEFAULT_REPS if reps is None else reps,
+                    rpe,
                 )
 
             cursor.executemany(
                 """
-                INSERT INTO usages (date, machine_id, weight, reps)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO usages (date, machine_id, weight, reps, rpe)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 [
-                    (usage_date, machine_ids[machine_name], weight, reps)
-                    for (usage_date, machine_name), (weight, reps)
+                    (usage_date, machine_ids[machine_name], weight, reps, rpe)
+                    for (usage_date, machine_name), (weight, reps, rpe)
                     in unique_usages.items()
                 ],
             )

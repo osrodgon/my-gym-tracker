@@ -26,7 +26,7 @@ def build_usage_history_workbook(
     sheet_data = ET.SubElement(worksheet, f"{{{_MAIN_NS}}}sheetData")
     _append_row(sheet_data, 1, EXPORT["headers"])
 
-    # Rows are (date, machine, weight, reps, image_key). The drawing is a
+    # Rows are (date, machine, weight, reps, rpe, image_key). The drawing is a
     # property of the machine, so it is written on its first row only: repeating
     # it on every set would be noise for whoever opens the workbook.
     machines_with_image = set()
@@ -146,12 +146,12 @@ def _only_first_image(
 ) -> Sequence[str | float | None]:
     """Keep the machine's drawing only on its first row.
 
-    Rows follow the `(date, machine, weight, reps, image_key)` shape produced by
-    `GymDatabase.get_usage_history()`; later rows of the same machine get a blank
+    Rows follow the `(date, machine, weight, reps, rpe, image_key)` shape produced
+    by `GymDatabase.get_usage_history()`; later rows of the same machine get a blank
     cell, which `_append_row` skips.
     """
     if row[1] in machines_with_image:
-        return (*row[:4], None)
+        return (*row[:5], None)
     machines_with_image.add(row[1])
     return row
 
@@ -167,7 +167,7 @@ def _append_row(
         {"r": str(row_number)},
     )
 
-    for column, value in zip(("A", "B", "C", "D", "E"), values):
+    for column, value in zip(("A", "B", "C", "D", "E", "F"), values):
         if value is None:
             continue
 

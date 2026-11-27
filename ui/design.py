@@ -59,6 +59,9 @@ DIALOG_RADIUS = dp(28)
 SNACKBAR_RADIUS = dp(4)
 IMAGE_CARD_RADIUS = dp(16)
 """M3 *large* corner for the highlighted container around a machine drawing."""
+BADGE_RADIUS = dp(8)
+"""Corner of the small inline pills: the latest-record RPE chip and the PR
+badge in the history card."""
 
 # Spacing
 FIELD_CONTENT_PADDING = ft.Padding.symmetric(
@@ -94,6 +97,11 @@ MENU_ELEVATION = 3
 Flet's Dropdown defaults to 8, which is a Material 2 value."""
 BANNER_PADDING = ft.Padding.symmetric(horizontal=dp(16), vertical=dp(12))
 """Inner padding of the inline "latest record" banner."""
+BADGE_PADDING = ft.Padding.symmetric(horizontal=dp(8), vertical=dp(4))
+"""Inner padding of the inline pills (RPE chip, PR badge)."""
+RPE_BUTTON_HEIGHT = dp(48)
+"""Height of the three effort buttons. Flet's segmented button renders at
+~31dp, which looked like a different design language next to the 56dp fields."""
 IMAGE_CARD_PADDING = dp(16)
 """Inner margin between the image card and the machine drawing it holds."""
 
