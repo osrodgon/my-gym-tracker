@@ -8,8 +8,11 @@ Está pensada para usarse en el móvil, en el propio gimnasio, con controles y t
 
 ## Funcionalidades
 
-- **Registro de uso**: elige una máquina, introduce el peso y las repeticiones, y guarda. La app muestra el último registro de esa máquina como referencia y, mientras no hayas elegido ninguna, una ilustración genérica. Desliza la imagen hacia los lados para cambiar de máquina sin abrir el desplegable.
-- **Un registro por máquina y día**: si ya has registrado esa máquina hoy, la app pide confirmación y sobrescribe el peso y las repeticiones en lugar de crear un duplicado.
+- **Registro de uso**: elige una máquina, introduce el peso y las repeticiones, marca el esfuerzo y guarda. La app muestra el último registro de esa máquina como referencia y, mientras no hayas elegido ninguna, una ilustración genérica. Desliza la imagen hacia los lados para cambiar de máquina sin abrir el desplegable.
+- **Esfuerzo (RPE)**: tres niveles — **Fácil**, **Justo** y **Máximo** — que se guardan como RPE 6, 8 y 10. Es opcional: vuelve a tocar el nivel marcado para dejarlo sin valor. El último RPE guardado aparece en la franja del último registro.
+- **Comparación con la última vez**: al escribir el peso, el propio campo muestra la diferencia con el último registro de esa máquina (`▲ 2,5` en azul si sube, `▼ 5,0` si baja).
+- **Récord personal**: en el historial, cada máquina muestra su serie más pesada con una insignia `★ PR`, y cada registro indica su RPE si lo tiene.
+- **Un registro por máquina y día**: si ya has registrado esa máquina hoy, la app pide confirmación y sobrescribe el peso, las repeticiones y el esfuerzo en lugar de crear un duplicado.
 - **Validación del peso y las repeticiones**: solo se admite la coma como separador decimal; el peso debe ser mayor que 0 y no superar los 1000 kg. Las repeticiones deben ser un número entero entre 1 y 999, y si dejas el campo vacío se guardan 12 por defecto. Los pesos se muestran siempre con coma y un decimal (`80` → `80,0`), y cada serie como `80,0 kg × 10 reps`.
 - **Historial**: registros agrupados por máquina en tarjetas expandibles, ordenados del más reciente al más antiguo, con borrado individual.
 - **Exportar e importar Excel**: desde el menú de opciones del historial. La exportación genera un `.xlsx` y la importación sustituye todos los datos actuales (ver [Datos](#datos)).
@@ -84,7 +87,7 @@ La app tiene tres pestañas:
 
 | Pestaña | Para qué sirve |
 |---|---|
-| **Registrar** | Elegir máquina, ver su último registro y guardar el peso y las repeticiones de hoy. |
+| **Registrar** | Elegir máquina, ver su último registro y guardar el peso, las repeticiones y el esfuerzo de hoy. |
 | **Historial** | Consultar los registros por máquina, borrar uno y abrir el menú de exportar/importar. |
 | **Máquinas** | Crear, editar y eliminar máquinas, con su imagen asociada. |
 
@@ -96,7 +99,7 @@ El botón flotante de **Historial** abre las opciones de Excel y el de **Máquin
 - Cada uso se guarda con la fecha del día en que se registra; no se pueden registrar entrenamientos pasados.
 - La base impide más de un registro para la misma máquina y día.
 - **La importación de Excel sustituye por completo las máquinas y los registros actuales.** Si el archivo trae varias filas para la misma máquina y fecha, se conserva la última.
-- La exportación escribe columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones` e `Imagen`, donde la última guarda el dibujo de cada máquina. La importación también acepta archivos antiguos sin `Imagen` (el dibujo se deduce del nombre) y de tres columnas, en cuyo caso se asignan 12 repeticiones por defecto.
+- La exportación escribe columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones`, `RPE` e `Imagen`, donde la última guarda el dibujo de cada máquina. La importación también acepta archivos de 3.0.x sin `RPE` (con `Imagen` en la quinta columna), archivos antiguos sin `Imagen` (el dibujo se deduce del nombre) y de tres columnas, en cuyo caso se asignan 12 repeticiones por defecto y el RPE queda vacío.
 
 ## Estructura del proyecto
 

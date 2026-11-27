@@ -12,6 +12,7 @@ COMMON = {
 
 SERIES = {
     "with_reps": "{weight} kg × {reps} reps",
+    "rpe": "RPE {value}",
 }
 """Formatting of a logged set. A record with no rep count is shown with
 `database.DEFAULT_REPS` instead of a partial value."""
@@ -22,7 +23,7 @@ USAGE = {
     "reps_label": "Reps (12)",
     "select_machine": "Selecciona una máquina arriba",
     "no_records": "Sin registros previos",
-    "latest_prefix": "Último registro: ",
+    "latest_prefix": "Último: ",
     "save": "Guardar serie",
     "saved": "Serie guardada.",
     "duplicate_title": "Registro duplicado",
@@ -31,6 +32,12 @@ USAGE = {
         "¿Sobrescribir el registro con {new}?"
     ),
     "overwrite": "Sobrescribir",
+    "rpe_low": "Fácil",
+    "rpe_mid": "Justo",
+    "rpe_high": "Máximo",
+    "rpe_badge": "RPE {value}",
+    "delta_up": "▲ {value}",
+    "delta_down": "▼ {value}",
 }
 
 HISTORY = {
@@ -43,6 +50,8 @@ HISTORY = {
     "delete": "Eliminar registro",
     "delete_title": "Eliminar registro",
     "delete_record": "¿Estás seguro de eliminar este registro?",
+    "personal_record": "★ PR {value}",
+    "rpe": "RPE {value}",
 }
 
 MACHINES = {
@@ -86,6 +95,9 @@ IMPORT = {
         "Las repeticiones de «{machine}» deben ser un número entero "
         "entre 1 y 999."
     ),
+    "invalid_rpe": (
+        "El RPE de «{machine}» debe ser un número entero entre 1 y 10."
+    ),
     "missing_machine": "Hay una fila con datos pero sin nombre de máquina.",
     "usage_without_date": "La máquina «{machine}» tiene datos pero no fecha.",
     "usage_without_weight": "La máquina «{machine}» tiene fecha pero no peso.",
@@ -97,7 +109,14 @@ IMPORT = {
 EXPORT = {
     "dialog_title": "Exportar historial a Excel",
     "file_name": "historial_gimnasio.xlsx",
-    "headers": ("Fecha", "Máquina", "Peso (kg)", "Repeticiones", "Imagen"),
+    "headers": (
+        "Fecha",
+        "Máquina",
+        "Peso (kg)",
+        "Repeticiones",
+        "RPE",
+        "Imagen",
+    ),
     "saved": "Historial exportado.",
     "cancelled": "Exportación cancelada.",
 }

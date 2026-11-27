@@ -16,11 +16,11 @@ of a workout session.
 No schema change, no extra input, no import/export impact.
 
 - **Delta vs. the last record**: `▲ 2,5 kg` / `▼` next to the typed weight, and
-  `+2 reps` where the series is shown. Highest value per line of code. Chosen;
-  see `docs/plans/rpe.md`.
+  `+2 reps` where the series is shown. Highest value per line of code.
+  Implemented in 3.2.0; see `docs/plans/rpe.md`.
 - **Personal record per machine**: heaviest set, more reps breaking a tie.
-  Chosen for the Historial badge; the same `max()` also enables the snackbar
-  "nuevo récord" after saving.
+  Implemented as the Historial badge in 3.2.0; the same `max()` also enables the
+  snackbar "nuevo récord" after saving, still pending.
 - **Volume**: `kg × reps` per record, plus weekly volume per machine. Pure
   arithmetic on the existing columns; useful as a second axis when the weight
   plateaus but the reps climb.
@@ -37,7 +37,8 @@ One value per machine/day, so the unique index survives. Each one means
 touching `database.py`, the Registrar row, the Historial row and the Excel
 round trip (see "Export/import" below).
 
-- **RPE** (three levels, 6/8/10). Chosen; designed in `docs/plans/rpe.md`.
+- **RPE** (three levels, 6/8/10). Implemented in 3.2.0; see
+  `docs/plans/rpe.md` for the decisions.
 - **Short note per record**: `asiento 3, agarre cerrado, molestia en hombro`.
   Free text is the cheapest way to capture machine-specific setup, but it fights
   the fixed-height Registrar layout when the Android keyboard opens, and the
@@ -78,8 +79,8 @@ Each of these changes the shape of the data, so it needs its own plan.
 ## Cross-cutting consequences
 
 - Every new column extends `EXPORT["headers"]` and must keep the importer's
-  backwards compatibility: it currently accepts 3- and 4-column workbooks, the
-  RPE plan adds 5 (today's export) and 6. Add the shape to the table in
+  backwards compatibility: it currently accepts 6 (current), 5 (3.0.x), 4
+  (2.2.0) and 3-column workbooks. Add the shape to the table in
   `docs/plans/rpe.md` rather than inventing a second convention.
 - New per-machine fields (`goal`, `setup`, `group`) live in `machines`, so they
   travel with the export only if the workbook grows a machine block or repeats

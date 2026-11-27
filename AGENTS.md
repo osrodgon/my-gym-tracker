@@ -32,10 +32,13 @@ SQLite persistence. Flet docs: https://flet.dev.
 - `ui/views.py` — `GymAppView(ft.Column)`: builds the 3-tab scaffold, swaps tab
   panels on nav change, hides the Máquinas FAB while its form is open, and
   exposes `update_data()` which pushes fresh DB rows into all tabs.
-- `ui/usage_tab.py` — "Registrar": machine dropdown, latest-record banner, machine
-  drawing card, weight + reps fields and the save button.
+- `ui/usage_tab.py` — "Registrar": machine dropdown, latest-record banner (with a
+  trailing RPE chip), machine drawing card, weight + reps fields, the three
+  effort buttons and the save button. The weight field also carries a delta
+  suffix against the machine's latest record.
 - `ui/history_tab.py` — "Historial": grouped-by-machine cards with per-record
-  delete, plus export/import via a `BottomSheet` opened from the only FAB.
+  delete and a `★ PR` badge next to each machine name, plus export/import via a
+  `BottomSheet` opened from the only FAB.
   Export reports the outcome (`EXPORT["saved"]` / `EXPORT["cancelled"]`) through
   a snackbar, from the path `save_file()` returns. `render()` rebuilds the whole
   list on every data refresh, so the cards the user left open are tracked in
@@ -52,10 +55,11 @@ SQLite persistence. Flet docs: https://flet.dev.
 - `ui/utils.py` — `ButtonStyles`, `create_dropdown`, `create_text_field`,
   `FixedHeightArea` (card area that keeps its measured height), `_DialogsMixin`
   (`_show_snackbar`, `_show_error`, `_show_message_dialog`), `format_date`,
-  `format_weight`, `format_series`, `is_dark_theme`.
+  `format_weight`, `format_series`, `format_set`, `is_dark_theme`.
 - `database.py` — `GymDatabase`: `get_summary`, `get_machines`, `get_usage_history`,
-  `get_latest_usage`, `log_use`, `update_usage`, `add_machine`, `rename_machine`,
-  `delete_machine`, `delete_usage`, `replace_data`.
+  `get_latest_usage`, `get_usage_for_date`, `get_personal_record`, `log_use`,
+  `update_usage`, `add_machine`, `rename_machine`, `delete_machine`,
+  `delete_usage`, `replace_data`.
 - `machine_images.py` — machine-name → asset path mapping; the drawings are WebP
   (`get_machine_image()`), plus two non-selectable assets: `no-selection.webp`
   (the empty state of the Registrar card) and `machine.svg` — the only SVG in the
@@ -63,11 +67,12 @@ SQLite persistence. Flet docs: https://flet.dev.
   `ft.Image.color`. Never set `ft.Image.color` on a WebP drawing: it blends every
   pixel with that colour and flattens the artwork into a solid silhouette.
 - `xlsx_export.py` / `xlsx_import.py` — Excel I/O with stdlib `zipfile` + XML,
-  no `openpyxl`. One sheet, five columns; the last one (`EXPORT["headers"][-1]`)
+  no `openpyxl`. One sheet, six columns; the last one (`EXPORT["headers"][-1]`)
   carries `machines.image_key` so drawings survive an export/import round trip.
   It is written on the machine's first row only, and the importer takes the first
-  non-empty key of each machine. The importer still accepts the 2.2.0
-  four-column and the older three-column shapes.
+  non-empty key of each machine. The importer still accepts the 3.0.x five-column
+  shape (image in E, no RPE), the 2.2.0 four-column and the older three-column
+  shapes; the column letters are derived from the detected shape, not hardcoded.
 - `docs/manual.md` — user manual (Spanish, with screenshots in `docs/img/`).
   Images are wrapped in `<p align="center"><img … width="320"></p>` rather than
   Markdown, so the 824px-wide PNGs render centred at roughly phone size; keep
@@ -163,6 +168,33 @@ SQLite persistence. Flet docs: https://flet.dev.
 - The Registrar weight and reps fields sit in the same `ResponsiveRow` with
   `vertical_alignment=ft.CrossAxisAlignment.START`: an error under one field
   must not push the neighbouring box down.
+- The effort (RPE) selector is a `ResponsiveRow` of three **pills** below the
+  weight/reps row (`col={"xs": 4}` each, `design.RPE_BUTTON_HEIGHT`), not an
+  `ft.SegmentedButton`: Flet renders the segmented control at ~31dp, which read
+  as a different design language next to the 56dp fields. The pills use the M3
+  full shape like the action buttons, with `styles.rpe_selected` (filled
+  `PRIMARY`, `ON_PRIMARY` text) for the chosen level and
+  `styles.rpe_unselected` (outline, `ON_SURFACE` text) for the rest. Tapping the
+  active one clears it, so "no effort" stays a state; the whole row is rebuilt
+  on every change (`_sync_rpe_buttons()`), which is also why `_selected_rpe()`
+  reads `self._rpe_value` instead of a control. Each pill's label is a `Text`
+  with `no_wrap` and ellipsis and the words are single (Fácil / Justo / Máximo),
+  so a bigger Android font scale cannot make a pill grow to two lines.
+- Accepted: the selected pill and the save button are both filled `PRIMARY`, so
+  two primary-coloured elements sit one above the other. The user chose this
+  over the tonal fill (`docs/mockups/p-rpe-pills-tonal.png`) and over the
+  traffic-light colours; don't "correct" it.
+- The effort is stored in `usages.rpe` (nullable, **no backfill**: `NULL` means
+  "no effort rating" and must not be normalised the way `reps` is). The values
+  are the standard 6 / 8 / 10, not 1–3, so the labels can change later without
+  migrating data. Placing the row below the fields moves them up: the image card
+  absorbs the extra height and the save button stays anchored at the bottom.
+- The weight delta is a persistent `ft.Text` assigned once as
+  `weight_input.suffix` and mutated (`value` / `color`), never recreated: the same
+  Flet 1.0.5 caution that applies to the dropdown label. It is recomputed from
+  `_clear_weight_error` (the field's `on_change`) and from `_refresh_selection`,
+  which caches the machine's latest weight; it hides when the field is empty,
+  unparseable, equal to the last weight, or no machine is selected.
 - The Registrar machine dropdown is cleared in place on every `reset()`. Flet
   1.0.5 keeps the previous label when only `value` is cleared (the text lives in
   the Flutter `DropdownMenu` controller), so `reset()` also blanks
@@ -172,7 +204,9 @@ SQLite persistence. Flet docs: https://flet.dev.
   change (a `Container` slot whose `content` is replaced) instead of mutating
   `Text.spans`: replacing rich-text spans on an update left the banner blank in
   Flet 1.0.5. The fresh control renders fine and still wraps to a second line,
-  because the slot sits in a `Row` with `expand=True`.
+  because the slot sits in a `Row` with `expand=True`. Its trailing
+  `USAGE["rpe_badge"]` chip (`PRIMARY_CONTAINER` background, `FONT_BODY_SMALL`)
+  is rebuilt the same way and hidden when the last record has no effort.
 - The Registrar image card and the machine form preview never shrink. Both sit
   inside `ui.utils.FixedHeightArea`, the flexible child of their `Column`: a
   clipping `ft.Stack` whose only child is positioned to all four edges, so it
@@ -231,9 +265,17 @@ SQLite persistence. Flet docs: https://flet.dev.
   inline field error that clears as soon as the value changes. Reps are integers
   between 1 and 999, and an empty field saves `database.DEFAULT_REPS` (12) rather
   than raising an error. A set is rendered with `format_series()`
-  (`80,0 kg × 10 reps`). A record stored without reps — logged before 2.2.0 or
-  imported from a three-column workbook — is treated as `database.DEFAULT_REPS`
-  too, both in the table and in `format_series()`.
+  (`80,0 kg × 10 reps`) or `format_set()` (`80,0 kg × 10 reps · RPE 8`) when the
+  record has an effort rating. A record stored without reps — logged before
+  2.2.0 or imported from a three-column workbook — is treated as
+  `database.DEFAULT_REPS` too, both in the table and in `format_series()`.
+- The Historial PR is derived, not stored: `render()` takes the `max()` of the
+  rows `get_summary()` already loaded (heaviest weight, more reps breaking the
+  tie) and shows it as a `★ PR` badge flush right in the tile title. The machine
+  name sits in the same `Row` with `expand=True`, `no_wrap` and an ellipsis
+  overflow, so a long name truncates instead of wrapping or pushing the badge
+  out. `database.get_personal_record()` exists for callers that need it without
+  the full history, but the tab does not use it.
 
 ## Material baseline
 
@@ -255,10 +297,10 @@ Implementation plans live **inside the repo** in `docs/plans/`, not in
 directory does not. One file per feature, with the decisions, the measurements
 they rest on and what is still open.
 
-Pending: `docs/plans/rpe.md` (three-level RPE, weight delta, PR badge in
-Historial) — designed and mocked, not implemented. Backlog of everything else
-considered so far, including the structural items that need new tables:
-`docs/plans/ideas.md`. No code issues are pending.
+Pending: nothing. `docs/plans/rpe.md` was implemented in 3.2.0 (three-level
+RPE, weight delta, PR badge in Historial) and is kept as the record of the
+decisions. Backlog of everything else considered so far, including the
+structural items that need new tables: `docs/plans/ideas.md`.
 
 ## Cautions
 
@@ -273,12 +315,16 @@ considered so far, including the structural items that need new tables:
   column, and an unknown key degrades to `NULL` ("Sin imagen") instead of raising.
 - `usages` has a unique index on `(machine_id, date)`: never insert a second row
   for the same machine and day. Check with `get_usage_for_date()` and use
-  `update_usage()` to overwrite both weight and reps. Imports deduplicate in
+  `update_usage()` to overwrite weight, reps and effort. Imports deduplicate in
   `replace_data()`.
 - `usages.reps` is nullable in the schema but never stays `NULL`: `_init_db()`
   backfills missing values with `database.DEFAULT_REPS` (12) after the
   `ALTER TABLE`, and `replace_data()` normalises three-column imports. Render sets
   through `format_series()`, which applies the same default.
+- `usages.rpe` is nullable on purpose and **does not get that backfill**: `NULL`
+  is the meaningful "no effort rating" of every record logged before 3.2.0. It is
+  validated in the UI and the importer (integer 1–10), not with a CHECK
+  constraint, consistent with the rest of the schema.
 - **No top app bar by design**: don't add `page.appbar`; the app deliberately has
   no app bar, now or in the near future. `page.title` only sets the
   browser/window title.

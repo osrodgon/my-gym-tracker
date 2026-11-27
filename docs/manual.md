@@ -62,8 +62,8 @@ nombre de la pestaña seleccionada ya indica dónde estás.
 
 | Pestaña | Para qué sirve |
 |---|---|
-| **Registrar** | Elegir la máquina, ver su último registro y guardar la serie de hoy. |
-| **Historial** | Consultar los registros agrupados por máquina, borrar uno y abrir las opciones de Excel. |
+| **Registrar** | Elegir la máquina, ver su último registro y guardar la serie de hoy con su esfuerzo. |
+| **Historial** | Consultar los registros agrupados por máquina, ver su récord, borrar uno y abrir las opciones de Excel. |
 | **Máquinas** | Crear, editar y eliminar máquinas, con su imagen. |
 
 Las pestañas **Historial** y **Máquinas** muestran un botón flotante en la
@@ -84,15 +84,22 @@ sigues con la siguiente.
    pasa a la máquina anterior o siguiente de la lista, y da la vuelta al llegar
    al final.
 2. **Mira el último registro** de esa máquina, que aparece bajo el desplegable
-   (`Último registro: 60,0 kg × 12 reps`). Es la referencia para saber con cuánto
-   acabaste la última vez.
+   (`Último: 60,0 kg × 12 reps`). Es la referencia para saber con cuánto
+   acabaste la última vez. A la derecha, si ese registro tiene esfuerzo, aparece
+   una etiqueta `RPE 8`.
 3. **Escribe el peso** en **Peso (kg)**. Se admite la coma para los decimales
    (`62,5`); el punto no, porque en español el decimal se escribe con coma. El
-   peso tiene que ser mayor que 0 y como mucho 1000 kg.
+   peso tiene que ser mayor que 0 y como mucho 1000 kg. Al escribirlo, el campo
+   muestra a su derecha la diferencia con el último registro: `▲ 2,5` si subes y
+   `▼ 5,0` si bajas.
 4. **Escribe las repeticiones** en **Reps (12)**. Es un número entero entre 1 y
    999. El `(12)` del nombre del campo es el valor por defecto: si lo dejas
    vacío, la serie se guarda con 12 repeticiones.
-5. **Pulsa Guardar serie**. La app confirma con un aviso y la pestaña se limpia,
+5. **Marca el esfuerzo** con uno de los tres botones que hay debajo: **Fácil**,
+   **Justo** o **Máximo**. Se guardan como RPE 6, 8 y 10. Es opcional y solo
+   admite un nivel: si vuelves a tocar el que está marcado, se queda sin
+   esfuerzo.
+6. **Pulsa Guardar serie**. La app confirma con un aviso y la pestaña se limpia,
    lista para la siguiente máquina.
 
 <p align="center">
@@ -106,9 +113,9 @@ para usarse en el gimnasio, así que cada serie se guarda con la fecha de hoy y 
 se pueden apuntar entrenamientos pasados.
 
 Si ya has registrado esa máquina hoy y vuelves a guardar, la app te avisa de lo
-que hay guardado y de lo que vas a poner. Si aceptas, **sobrescribe** el peso y
-las repeticiones de hoy en lugar de crear un registro duplicado; si cancelas, no
-cambia nada.
+que hay guardado y de lo que vas a poner. Si aceptas, **sobrescribe** el peso, las
+repeticiones y el esfuerzo de hoy en lugar de crear un registro duplicado; si
+cancelas, no cambia nada.
 
 <p align="center">
 <img src="img/04-register-overwrite-warning.png" alt="Aviso al guardar una máquina que ya tiene registro hoy" width="320">
@@ -121,7 +128,11 @@ registro más reciente arriba y, en cada una, sus registros del más nuevo al m�
 antiguo.
 
 - **Toca una máquina** para desplegar sus registros. Cada uno muestra la fecha y
-  la serie, por ejemplo `60,0 kg × 12 reps`.
+  la serie, por ejemplo `60,0 kg × 12 reps`, y debajo su esfuerzo (`RPE 8`) si lo
+  tiene.
+- Al lado del nombre de cada máquina, la insignia `★ PR 60,0 kg` marca su
+  **récord personal**: la serie más pesada, y si hay empate la de más
+  repeticiones.
 - La tarjeta sigue desplegada aunque los datos se actualicen: al guardar una
   serie desde **Registrar** o al borrar un registro, las que tenías abiertas no
   se cierran.
@@ -150,7 +161,7 @@ El botón flotante de la pestaña **Historial** abre las dos acciones de Excel.
 ### Exportar
 
 **Exportar a Excel** genera un archivo `historial_gimnasio.xlsx` con una fila por
-registro y las columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones` e
+registro y las columnas `Fecha`, `Máquina`, `Peso (kg)`, `Repeticiones`, `RPE` e
 `Imagen`. La última guarda el dibujo que tiene cada máquina, así que al importar
 el archivo se recuperan también las imágenes. El
 navegador o el sistema piden dónde guardarlo y, al terminar, la app avisa de si
@@ -172,10 +183,14 @@ Por eso la app avisa antes de continuar:
 <img src="img/07-import-warning.png" alt="Aviso de que la importación reemplaza los datos actuales" width="320">
 </p>
 
-- También acepta archivos antiguos de tres columnas (`Fecha`, `Máquina`,
-  `Peso (kg)`); en ese caso se asignan 12 repeticiones a cada serie.
+- También acepta archivos de versiones anteriores: los de 3.0.x tienen cinco
+  columnas (sin `RPE`, con `Imagen` en la quinta) y los de tres columnas
+  (`Fecha`, `Máquina`, `Peso (kg)`) asignan 12 repeticiones a cada serie. En
+  todos ellos el esfuerzo queda vacío.
 - Los archivos sin columna `Imagen` (exportados antes de 3.0.0) siguen
   importándose: el dibujo de cada máquina se deduce de su nombre.
+- El `RPE` tiene que ser un número entero entre 1 y 10; si la celda está vacía, el
+  registro se importa sin esfuerzo.
 - Si el archivo trae varias filas de la misma máquina y fecha, se queda con la
   última.
 - Al terminar, la app muestra cuántas máquinas y cuántos registros se han
@@ -263,6 +278,18 @@ el aviso desaparece.
 Es lo previsto: 12 es el valor por defecto del campo, pensado para no tener que
 escribirlo en cada serie.
 
+**¿Qué significa el ▲ que aparece al escribir el peso?**
+
+Es la diferencia con el último registro de esa máquina: `▲ 2,5` quiere decir que
+hoy pones 2,5 kg más, y `▼ 5,0` que pones 5 kg menos. Si el peso es el mismo que
+la última vez, no aparece nada.
+
+**¿Para qué sirve el RPE?**
+
+Para recordar cómo de duro fue la serie sin escribir nada: **Fácil**, **Justo** o
+**Máximo**. Es opcional; si no marcas ninguno, la serie se guarda igual y en el
+historial simplemente no aparece el RPE.
+
 **Dice «Sin registros previos».**
 
 Esa máquina todavía no tiene ninguna serie guardada. Elige otra o guarda la
@@ -271,7 +298,8 @@ primera.
 **He guardado y no aparece un registro nuevo, me ha preguntado si sobrescribir.**
 
 Ya había un registro de esa máquina hoy: solo se admite uno por máquina y día, así
-que la app actualiza el peso y las repeticiones en lugar de duplicarlo.
+que la app actualiza el peso, las repeticiones y el esfuerzo en lugar de
+duplicarlo.
 
 **La imagen de la máquina no aparece en la lista.**
 

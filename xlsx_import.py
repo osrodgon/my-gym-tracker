@@ -10,6 +10,7 @@ from machine_images import MACHINE_IMAGES, get_machine_image_key
 
 _NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _MAX_REPS = 999
+_MAX_RPE = 10
 
 
 def _cell_text(cell: ET.Element, shared_strings: list[str]) -> str:
@@ -71,6 +72,27 @@ def _parse_reps(value: str, machine_name: str) -> int:
     return int(numeric)
 
 
+def _parse_rpe(value: str, machine_name: str) -> int:
+    """Parse the effort cell, accepting Excel's `8` and `8.0` spellings."""
+    try:
+        numeric = float(value)
+    except ValueError as exc:
+        raise ValueError(
+            IMPORT["invalid_rpe"].format(machine=machine_name)
+        ) from exc
+
+    if (
+        not isfinite(numeric)
+        or not numeric.is_integer()
+        or not 1 <= int(numeric) <= _MAX_RPE
+    ):
+        raise ValueError(
+            IMPORT["invalid_rpe"].format(machine=machine_name)
+        )
+
+    return int(numeric)
+
+
 def _resolve_image_key(
     image_text: str,
     machine_name: str,
@@ -89,7 +111,10 @@ def _resolve_image_key(
 
 def parse_usage_workbook(
     workbook_bytes: bytes,
-) -> tuple[list[tuple[str, str | None]], list[tuple[str, str, float, int | None]]]:
+) -> tuple[
+    list[tuple[str, str | None]],
+    list[tuple[str, str, float, int | None, int | None]],
+]:
     try:
         with ZipFile(BytesIO(workbook_bytes)) as archive:
             worksheet = ET.fromstring(
@@ -124,25 +149,32 @@ def parse_usage_workbook(
         for cell in row.findall(f"{{{_NS}}}c"):
             reference = cell.get("r", "")
             column = "".join(char for char in reference if char.isalpha())
-            if column in {"A", "B", "C", "D", "E"}:
+            if column in {"A", "B", "C", "D", "E", "F"}:
                 values[column] = _cell_text(cell, shared_strings)
         return values
 
     headers = read_row(rows[0])
-    header_values = [headers.get(column, "").strip() for column in "ABCDE"]
+    header_values = [headers.get(column, "").strip() for column in "ABCDEF"]
     expected_headers = list(EXPORT["headers"])
 
-    # 3.0.0 workbooks carry the Imagen column, 2.2.0 stops at Repeticiones and
-    # older ones at Peso. Each older shape stays importable.
+    # 3.2.0 workbooks add the RPE column before Imagen; 3.0.0 stops at Imagen,
+    # 2.2.0 at Repeticiones and older ones at Peso. Every older shape stays
+    # importable (see the table in `docs/plans/rpe.md`). The column letters are
+    # derived from the shape, because a 5-column workbook keeps the drawing in E.
     if header_values == expected_headers:
-        has_reps_column = True
-        has_image_column = True
-    elif header_values[:4] == expected_headers[:4] and not header_values[4]:
-        has_reps_column = True
-        has_image_column = False
+        reps_column, rpe_column, image_column = "D", "E", "F"
+    elif (
+        header_values[:4] == expected_headers[:4]
+        # In a 5-column workbook the fifth column is the drawing, not the
+        # effort rating, so it must be matched explicitly.
+        and header_values[4] == expected_headers[5]
+        and not header_values[5]
+    ):
+        reps_column, rpe_column, image_column = "D", None, "E"
+    elif header_values[:4] == expected_headers[:4] and not any(header_values[4:]):
+        reps_column, rpe_column, image_column = "D", None, None
     elif header_values[:3] == expected_headers[:3] and not any(header_values[3:]):
-        has_reps_column = False
-        has_image_column = False
+        reps_column, rpe_column, image_column = None, None, None
     else:
         raise ValueError(
             IMPORT["invalid_headers"].format(
@@ -151,21 +183,23 @@ def parse_usage_workbook(
         )
 
     machines: dict[str, str | None] = {}
-    usages: list[tuple[str, str, float, int | None]] = []
+    usages: list[tuple[str, str, float, int | None, int | None]] = []
 
     for row in rows[1:]:
         values = read_row(row)
         usage_date = values.get("A", "").strip()
         machine_name = values.get("B", "").strip()
         weight_text = values.get("C", "").strip()
-        reps_text = values.get("D", "").strip() if has_reps_column else ""
-        image_text = values.get("E", "").strip() if has_image_column else ""
+        reps_text = values.get(reps_column, "").strip() if reps_column else ""
+        rpe_text = values.get(rpe_column, "").strip() if rpe_column else ""
+        image_text = values.get(image_column, "").strip() if image_column else ""
 
         if (
             not usage_date
             and not machine_name
             and not weight_text
             and not reps_text
+            and not rpe_text
         ):
             continue
 
@@ -176,13 +210,15 @@ def parse_usage_workbook(
 
         # The export writes the drawing only on the machine's first row, so the
         # key is taken from whichever row of that machine carries it.
-        image_key = _resolve_image_key(image_text, machine_name, has_image_column)
+        image_key = _resolve_image_key(
+            image_text, machine_name, image_column is not None
+        )
         if machine_name not in machines or image_key is not None:
             machines[machine_name] = image_key
 
         # A blank date and blank weight indicate a machine that has not been used.
         if not usage_date:
-            if weight_text or reps_text:
+            if weight_text or reps_text or rpe_text:
                 raise ValueError(
                     IMPORT["usage_without_date"].format(machine=machine_name)
                 )
@@ -207,8 +243,9 @@ def parse_usage_workbook(
             )
 
         reps = _parse_reps(reps_text, machine_name) if reps_text else None
+        rpe = _parse_rpe(rpe_text, machine_name) if rpe_text else None
 
-        usages.append((normalized_date, machine_name, weight, reps))
+        usages.append((normalized_date, machine_name, weight, reps, rpe))
 
     if not machines:
         raise ValueError(IMPORT["no_machines"])

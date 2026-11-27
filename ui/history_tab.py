@@ -6,7 +6,13 @@ from xlsx_export import build_usage_history_workbook
 from xlsx_import import parse_usage_workbook
 from ui import design
 from ui.texts import COMMON, ERRORS, EXPORT, HISTORY, IMPORT, MACHINES
-from ui.utils import ButtonStyles, _DialogsMixin, format_date, format_series
+from ui.utils import (
+    ButtonStyles,
+    _DialogsMixin,
+    format_date,
+    format_series,
+    format_weight,
+)
 
 
 class HistoryTab(_DialogsMixin):
@@ -88,6 +94,7 @@ class HistoryTab(_DialogsMixin):
             machine_name,
             weight,
             reps,
+            rpe,
             usage_date,
         ) in results:
             if machine_id not in grouped:
@@ -97,7 +104,7 @@ class HistoryTab(_DialogsMixin):
                     "id": machine_id,
                 }
             grouped[machine_id]["entries"].append(
-                (usage_id, weight, reps, usage_date)
+                (usage_id, weight, reps, rpe, usage_date)
             )
 
         # A deleted machine cannot stay expanded, so ids that are no longer in
@@ -106,13 +113,34 @@ class HistoryTab(_DialogsMixin):
 
         for machine_id, machine in grouped.items():
             entries = machine["entries"]
-            _latest_id, latest_weight, latest_reps, latest_date = entries[0]
+            _latest_id, latest_weight, latest_reps, _latest_rpe, latest_date = (
+                entries[0]
+            )
+            # Heaviest set, more reps breaking a tie. Computed from the rows
+            # already loaded, so the badge costs no extra query.
+            record = max(entries, key=lambda entry: (entry[1], entry[2]))
             self._summary_list.controls.append(
                 ft.Card(
                     margin=0,
                     shape=ft.RoundedRectangleBorder(radius=design.CARD_RADIUS),
                     content=ft.ExpansionTile(
-                        title=ft.Text(machine["name"], weight=ft.FontWeight.BOLD),
+                        title=ft.Row(
+                            spacing=design.dp(8),
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[
+                                # The name takes the free width and truncates
+                                # instead of pushing the badge off the row.
+                                ft.Text(
+                                    machine["name"],
+                                    weight=ft.FontWeight.BOLD,
+                                    max_lines=1,
+                                    no_wrap=True,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                    expand=True,
+                                ),
+                                self._build_pr_badge(record[1]),
+                            ],
+                        ),
                         expanded=machine_id in self._expanded_machines,
                         on_change=lambda e, mid=machine_id: (
                             self._on_tile_change(mid, e)
@@ -127,6 +155,14 @@ class HistoryTab(_DialogsMixin):
                         controls=[
                             ft.ListTile(
                                 title=ft.Text(format_date(entry_date)),
+                                subtitle=(
+                                    ft.Text(
+                                        HISTORY["rpe"].format(value=entry_rpe),
+                                        italic=True,
+                                    )
+                                    if entry_rpe is not None
+                                    else None
+                                ),
                                 trailing=ft.Row(
                                     tight=True,
                                     spacing=10,
@@ -147,7 +183,8 @@ class HistoryTab(_DialogsMixin):
                                     ],
                                 ),
                             )
-                            for entry_id, entry_weight, entry_reps, entry_date in entries
+                            for entry_id, entry_weight, entry_reps, entry_rpe, entry_date
+                            in entries
                         ],
                     ),
                 )
@@ -162,6 +199,21 @@ class HistoryTab(_DialogsMixin):
             expand=True,
             padding=0,
             content=self._summary_list,
+        )
+
+    def _build_pr_badge(self, weight: float) -> ft.Container:
+        """Badge next to the machine name marking its heaviest set."""
+        return ft.Container(
+            bgcolor=ft.Colors.PRIMARY_CONTAINER,
+            border_radius=design.BADGE_RADIUS,
+            padding=design.BADGE_PADDING,
+            content=ft.Text(
+                HISTORY["personal_record"].format(
+                    value=f"{format_weight(weight)} kg"
+                ),
+                color=ft.Colors.ON_PRIMARY_CONTAINER,
+                size=design.FONT_BODY_SMALL,
+            ),
         )
 
     # ------------------------------------------------------------------

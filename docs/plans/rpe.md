@@ -1,12 +1,13 @@
 # Plan: perceived effort (RPE) + weight delta + personal record
 
-Status: **designed, not implemented**. Nothing in the code depends on this doc
-yet; `database.py`, `ui/texts.py`, `ui/usage_tab.py`, `ui/history_tab.py`,
-`xlsx_export.py` and `xlsx_import.py` are untouched.
+Status: **implemented in 3.2.0**. Kept as the record of the decisions; the code
+is the source of truth from here on. The Registrar fields did not move: the new
+row is taken from the image card's slack, so only the drawing shrank.
 
-Mockups: `docs/mockups/e-registrar-rpe.png` is the reference for the Registrar
-tab, `c-historial-pr.png` for the Historial badge. The other files in that
-folder are the discarded variants (see "Rejected alternatives").
+Mockups: `docs/mockups/e-registrar-rpe.png` was the original reference for the
+Registrar tab; the shipped control ended up as three pills below the fields,
+matching `docs/mockups/o-rpe-pills-neutral.png` (the variants next to it are the
+discarded ones). `c-historial-pr.png` covers the Historial badge.
 
 ## Decisions (locked by the user)
 
@@ -29,22 +30,24 @@ Space was the hard constraint. Current vertical budget at 412×892 dp:
 | --- | --- | --- |
 | dropdown | 56 | unchanged |
 | banner | 55 | unchanged height, gains a trailing RPE chip |
-| image card | flexible | currently ~447 dp, drawing ~304 dp |
-| **RPE selector** | **48** | new |
-| weight + reps | 78 | unchanged |
+| image card | flexible | shrinks to make room for the effort row |
+| weight + reps | 78 | move up by the height of the new row |
+| **RPE row** | **~50** | new, below the fields |
 | save button | 66 | unchanged, stays pinned at the bottom |
 
 The new row is taken from the image card, which keeps the drawing intact
-because the card has ~60 dp of slack below the illustration. Nothing else moves,
-so the save button stays in the thumb zone and the fields stay reachable with
-the keyboard open.
+because the card has slack below the illustration. The save button stays in the
+thumb zone and the fields stay reachable with the keyboard open.
 
-- Control: `ft.SegmentedButton` (present in Flet 1.0.5) with
-  `segments=[ft.Segment(value="6"|"8"|"10", label=USAGE["rpe_low"|...])]`,
-  `allow_empty_selection=True`, `show_selected_icon=False`, `selected=[]`.
-  Tapping the active segment clears it, so "no effort" is a real state.
-- Placement: own `ft.ResponsiveRow` between `self._card_area` and `inputs_row`,
-  with `col={"xs": 12}` on the button (same pattern as the text fields).
+- Control: three **pills**, not a segmented control. `ft.SegmentedButton`
+  renders at ~31 dp in Flet 1.0.5, which read as a different design language
+  next to the 56 dp fields. The pills use the M3 full shape (like the action
+  buttons): the chosen level is a filled `PRIMARY` button, the rest are
+  outlined, and tapping the active one clears it so "no effort" is a real
+  state.
+- Placement: their own `ft.ResponsiveRow` **after** the weight/reps row, just
+  above the save button, so the flow is peso → reps → esfuerzo → guardar. The
+  fields move up; the card absorbs the difference.
 - Three levels, not ten: it is used standing, one-handed, tapping with a thumb;
   ten targets in 412 dp are 30 dp wide. Stored as 6 / 8 / 10 so the numbers stay
   standard and the labels can change later without migrating data.
@@ -119,7 +122,7 @@ USAGE |= {
     "latest_prefix": "Último: ",   # changed
     "rpe_low": "Fácil",
     "rpe_mid": "Justo",
-    "rpe_high": "Al límite",
+    "rpe_high": "Máximo",
     "rpe_badge": "RPE {value}",
     "delta_up": "▲ {value}",
     "delta_down": "▼ {value}",
@@ -154,7 +157,10 @@ RPE parsing: integer 1–10, `IMPORT["invalid_rpe"]` otherwise, empty → NULL.
 ## Flet 1.0.5 notes
 
 - `ft.SegmentedButton` and `ft.Segment` exist; `Segment(value, label)` and
-  `selected` is a list of the `value` strings.
+  `selected` is a list of the `value` strings. **Dropped in the end**: it
+  renders at ~31 dp, half the height of the fields, and looked like a different
+  design language. Three `FilledButton`/`OutlinedButton` with the fields' corner
+  radius replaced it.
 - `ft.Positioned` does **not** exist (the mockups overlay by setting `top`/
   `right` on a `Container`), but that is irrelevant here.
 - `TextField.suffix` accepts a control; verify a value update repaints before
@@ -173,10 +179,11 @@ RPE parsing: integer 1–10, `IMPORT["invalid_rpe"]` otherwise, empty → NULL.
 
 - `README.md` (Spanish, user-facing): effort field, delta, PR.
 - `docs/manual.md` + `docs/screenshots.py`: the new row shifts the Registrar
-  coordinates. `WEIGHT_FIELD`, `REPS_FIELD`, `SAVE_BUTTON` move down ~48 dp
-  (measure the first screenshot, do not guess); `MACHINE_DROPDOWN`,
-  `REGISTRAR_HEADER` and the nav bar points stay. Add the RPE tap to the demo
-  run so the shot shows a selected level.
+  coordinates. In practice the fields and the save button kept their position
+  (the row comes out of the image card), so only `RPE_SEGMENT_Y` was added; take
+  the shots and check them rather than trusting the estimate.
+  `MACHINE_DROPDOWN`, `REGISTRAR_HEADER` and the nav bar points stay. Add the RPE
+  tap to the demo run so the shot shows a selected level.
 - `AGENTS.md`: Registrar layout, `database.py` method list, Excel column count,
   and this plan's status.
 
@@ -194,7 +201,8 @@ RPE parsing: integer 1–10, `IMPORT["invalid_rpe"]` otherwise, empty → NULL.
 ## Open questions
 
 - Does the RPE selector need a label or icon for first-time users, or are the
-  three words self-explanatory? (The mockup has no label to save height.)
+  three words self-explanatory? **Shipped without a label**: the three words fit
+  and the row stays at ~48 dp.
 - Should the snackbar say "nuevo récord" when the saved set beats the PR? It
   would need `get_personal_record` before the insert; the PR badge in Historial
-  already covers discovery.
+  already covers discovery. **Left in `docs/plans/ideas.md`.**
