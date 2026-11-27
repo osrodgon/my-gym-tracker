@@ -17,6 +17,7 @@ MACHINE_IMAGES = {
     "extension-de-triceps": "machines/tricep-extension.svg",
     "jalon-al-pecho": "machines/lat-pulldown.svg",
     "mancuernas": "machines/dumbbells.svg",
+    "apertura-de-pectoral": "machines/pec-fly.svg",
     "press-de-hombros": "machines/shoulder-press.svg",
     "press-de-pecho": "machines/chest-press.svg",
     "press-de-piernas": "machines/leg-press.svg",
